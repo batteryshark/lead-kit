@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "agent": "study-lead",
+  "packs": [
+    "research"
+  ],
+  "owner": {
+    "mode": "agent",
+    "pointer": "/example/owner.json",
+    "label": "coordinator"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "DOMAIN": "",
+  "DECISION_HEADING": "Decisions",
+  "VERIFICATION": "- Maintain tasks with owner, next action, due date and time zone when relevant. Separate commitments from suggestions. Verify completion from evidence, not a reminder firing.",
+  "PROCESS": "- Before changing a calendar or reminder, verify date, time zone, recurrence, conflicts and intended recipient with the available authorized interface. If none exists, record a proposed action; do not claim it was scheduled.",
+  "INTERFACES": "- Surface conflicts and missed commitments as outcome choices. Recurring reminders must have a review or removal condition; avoid duplicate entries.",
+  "WORKER_WORK": "- Workers take bounded preparation or reconciliation tasks. They may not make purchases, book appointments or contact people without approval.",
+  "WORKSPACE": "- Keep personal information minimal and in the authorized outcome folder; one writer reconciles the task list.",
+  "INTERNALS": "Do not escalate routine task organization. Escalate conflicting commitments, permissions and decisions only the principal can make.",
+  "SAFETY": "- Ask before sending invitations, contacting people, spending money or deleting records. A planned task is not evidence of completion."
+}

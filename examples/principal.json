@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "agent": "study-lead",
+  "packs": [
+    "research"
+  ],
+  "owner": {
+    "mode": "principal",
+    "style": "Short outcomes with evidence on request."
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "source_pin": "6623f0f2b240336948614e5a84c85806f01cacef",
+  "product_baseline": "8acfec8",
+  "version": "0.1.0-staging.1",
+  "upstream_blobs": [
+    {
+      "path": "install.sh",
+      "blob": "ae36fd9b2e8ae1a1bf6545ec9b682accae7dda50",
+      "mode": "100755",
+      "sha256": "ad420e436758e48e26eb6650dd4e3c1fe14db11f1e30ebcbfffd65c585543660"
+    },
+    {
+      "path": "scripts/render.py",
+      "blob": "9ccc9ddb3fca40b82d4d2408c23b486bd14f1d4c",
+      "mode": "100644",
+      "sha256": "7a1c8afb8fdee6d46d728267124e66c8ec6d76b8439842d0fc798c2c98eaded7"
+    },
+    {
+      "path": "scripts/install-lead.py",
+      "blob": "bc7e42908a8dd3deef31fad4b2e76ffc762189de",
+      "mode": "100644",
+      "sha256": "6a4d0629ec59566b410eedc03f5adf24d28340b50e951c37f1c3198d58fa2c4f"
+    },
+    {
+      "path": "scripts/install_paths.py",
+      "blob": "6a42afc29307ff10bfd762813c66ef40880cecf3",
+      "mode": "100644",
+      "sha256": "0564731e2a161fc06b02bfbc00e32b61471074cbe039f3c386b6dd2a8b23d02c"
+    },
+    {
+      "path": "kits/lead/core.md",
+      "blob": "12072a3339e361e700bad61b6482cc055d054094",
+      "mode": "100644",
+      "sha256": "d15820fa6a6e1063165d2b8030634ee11d2e8ea2be6b99d7b39be9df0affb9fc"
+    },
+    {
+      "path": "kits/lead/log.template.md",
+      "blob": "969ebdef4389608d569d8d3cdb83c3b27bff4d16",
+      "mode": "100644",
+      "sha256": "f3b561beb0e03724415fe163dd55a1dd71ae4ef3391cf5ce49ef0d9927e66672"
+    },
+    {
+      "path": "kits/lead/hosts/claude.md",
+      "blob": "5aaed05dfb39d19fa6c175841c9e605c1be30c35",
+      "mode": "100644",
+      "sha256": "13afb59a0e700fc17a59d2edc989ce493c44a63a55e4831c8976c248f1dab98f"
+    },
+    {
+      "path": "kits/lead/hosts/codex.toml",
+      "blob": "c5f79b9737e1ee857c0df4b1a104048724dd488d",
+      "mode": "100644",
+      "sha256": "c2aea775ff67b856ff245d18f2abe55eaa6b77f28af7b71a94dee372145f5ab2"
+    },
+    {
+      "path": "kits/lead/hosts/opencode.md",
+      "blob": "ef8047a2f1d343356d95875df2c8165191cbe135",
+      "mode": "100644",
+      "sha256": "a671e06f06b8b57829f0354dc24f8872c87e946540ec050373dcfd9aabe0206f"
+    },
+    {
+      "path": "kits/lead/skills/checkpoint.md",
+      "blob": "bafed3b22d446792c55d2c1c34ba7f483e331382",
+      "mode": "100644",
+      "sha256": "fb298629fd749e938d562d14d73eb196a8fc23a5968e6e2d0d6f38c625d87af9"
+    },
+    {
+      "path": "kits/lead/skills/checkpoint-technical.md",
+      "blob": "2508e1527e205a1944c9f7dd40f017797dcc8bf8",
+      "mode": "100644",
+      "sha256": "458d450c6b0aaecffa182ce114f8724c1d1327f856f816d34ffd493c891faa58"
+    },
+    {
+      "path": "kits/shared/docket.md",
+      "blob": "d069598165198f1d48ad8015d0e605aa89cee384",
+      "mode": "100644",
+      "sha256": "bf76c1973324cd60ca12f409094e389c45970ca4d9af29c365b38aa8165ecbe4"
+    },
+    {
+      "path": "kits/shared/fleet.md",
+      "blob": "224cbfafbfbb3f79c67087b27e515fc563fae31f",
+      "mode": "100644",
+      "sha256": "0f77f63f7da041e0a5ae9bc25a25d2d60fad534dc777a885293564e8f01c1439"
+    },
+    {
+      "path": "practices/engineering/lead.json",
+      "blob": "20b75969e27c223de9796a645380c02e6e41655e",
+      "mode": "100644",
+      "sha256": "6c7ace3a31b45f3466a2aed86a0ff6dc52ac529b40e3ed2479436c6a4300b366"
+    },
+    {
+      "path": "practices/engineering/opencode-workspace.md",
+      "blob": "fd72739e1114528575422cffd94819ebd07c9ef0",
+      "mode": "100644",
+      "sha256": "e8c057c7d0ec152f260cc85ffc1f440ca590c1c2bd12baf942d7e0940a5757ac"
+    },
+    {
+      "path": "practices/research/lead.json",
+      "blob": "a88780db8c8da6dba44ce94d9e2ce701899acab6",
+      "mode": "100644",
+      "sha256": "3df6ac6332ef27b344c8a180b957477e0b4a07da9fe9f15335d6d18ce4b1875f"
+    },
+    {
+      "path": "practices/life-admin/lead.json",
+      "blob": "556559d46c2986c03d9122da4f884233b466faf5",
+      "mode": "100644",
+      "sha256": "1bf3b8de32c32e36d92f34ce2eb3631307e1ddc9780e6a0e44ca46f3f57abc9c"
+    }
+  ],
+  "content": {
+    ".gitignore": "dec21cc2dae482bd3114dcbbeb6394c3a06b640acc2fe13552ebd8fa6e2740e3",
+    "ATTRIBUTION.md": "d6092b26df58447d003eb3df275c6a4b6d5916e4aaf671d5529e149ab04b1fed",
+    "README.md": "95cfd6461f9cde1a868d8d85cb6b65216f90c40b64a76efbbd1f07aeed74d2fc",
+    "VERSION": "847b2569dcc4009055807bfcd3e0022b52f2842dbfa6595d0063dded6c303c3b",
+    "examples/agent.json": "8dc1205001ef7c2dfa46f63d2e7aa03c34ee2756e0fada57c63e5e525bc45dec",
+    "examples/owner.json": "35be3dd8525a6a2713c7007300d1fa5b900ca59f102b3b10dfde815e4f2fc27a",
+    "examples/principal.json": "e0699c032f688a8463a4669e48db69917e3efd2561a0e1d4bce364ec3596b8bf",
+    "install.sh": "f557f0f3748198573874070cdefae78d1c5fca514ce998016b7e1c9f2ebefd5b",
+    "kits/lead/core.md": "d15820fa6a6e1063165d2b8030634ee11d2e8ea2be6b99d7b39be9df0affb9fc",
+    "kits/lead/hosts/claude.md": "13afb59a0e700fc17a59d2edc989ce493c44a63a55e4831c8976c248f1dab98f",
+    "kits/lead/hosts/codex.toml": "c2aea775ff67b856ff245d18f2abe55eaa6b77f28af7b71a94dee372145f5ab2",
+    "kits/lead/hosts/opencode.md": "a671e06f06b8b57829f0354dc24f8872c87e946540ec050373dcfd9aabe0206f",
+    "kits/lead/log.template.md": "f3b561beb0e03724415fe163dd55a1dd71ae4ef3391cf5ce49ef0d9927e66672",
+    "kits/lead/skills/checkpoint-technical.md": "458d450c6b0aaecffa182ce114f8724c1d1327f856f816d34ffd493c891faa58",
+    "kits/lead/skills/checkpoint.md": "fb298629fd749e938d562d14d73eb196a8fc23a5968e6e2d0d6f38c625d87af9",
+    "kits/shared/docket.md": "b1817688a62c6233e6054b0d6001819b2b49bd649ed55a5ef20f7a866129c28b",
+    "kits/shared/fleet.md": "7dea5399c8ca1f82b85c8f10e71adecda68b84f9677dd200f52b1a50f0311c80",
+    "practices/engineering/lead.json": "6c7ace3a31b45f3466a2aed86a0ff6dc52ac529b40e3ed2479436c6a4300b366",
+    "practices/engineering/opencode-workspace.md": "e8c057c7d0ec152f260cc85ffc1f440ca590c1c2bd12baf942d7e0940a5757ac",
+    "practices/life-admin/lead.json": "1bf3b8de32c32e36d92f34ce2eb3631307e1ddc9780e6a0e44ca46f3f57abc9c",
+    "practices/research/lead.json": "3df6ac6332ef27b344c8a180b957477e0b4a07da9fe9f15335d6d18ce4b1875f",
+    "scripts/install-lead.py": "6a4d0629ec59566b410eedc03f5adf24d28340b50e951c37f1c3198d58fa2c4f",
+    "scripts/install_paths.py": "0564731e2a161fc06b02bfbc00e32b61471074cbe039f3c386b6dd2a8b23d02c",
+    "scripts/render.py": "06eb5ca9e4702e267117c6940c55b37b0e0b34a62a23e1764744163adbf82945",
+    "tests/test_standalone.py": "5185df5fdc2efc9d9db4c8766965726622fa1a2612d31123e9de86c0350c7917"
+  },
+  "edits": "See inventory/staging-chief-lead.md in the staging review project; module split, portable optional service guides, operator-owned policy seeds and offline fixtures. No source history imported.",
+  "rights": "License decision pending; no new grant; preserve upstream attribution."
+}
