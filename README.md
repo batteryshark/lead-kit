@@ -1,5 +1,10 @@
 # Lead kit
 
+<p><a href="assets/workstack-mark-full.png"><img src="assets/workstack-mark.png" alt="Lead comic mark" width="160" style="max-width:100%;height:auto;"></a></p>
+
+Reviewed comic mark, locally wired only; not a product capture, native acceptance or release clearance.
+[Small-use Tiny32](assets/workstack-mark-32.png) is a separately designed composition, not a shrunk badge.
+
 One outcome, one accountable lead: planning, bounded workers, decisions,
 verification, a durable `LEAD.md` and checkpoint/handover instructions. This is
 an instruction kit and installer, not a daemon or autonomous execution engine.
@@ -70,4 +75,10 @@ Fixtures install only into their own temporary homes; no host server is started.
 Version `0.1.0-staging.1` is a local source snapshot, not a published release or
 full live-host acceptance. `PROVENANCE.json` records pin, edits and content hashes.
 Licensing/redistribution, scanner review and assets remain gated; see
-`ATTRIBUTION.md`. No logo, screenshot or demo is approved/included.
+`ATTRIBUTION.md`. The selected print-only capture is included below; the reviewed comic mark is locally wired only.
+
+## Selected print-only capture
+
+![Real Terminal crop of Lead print-only stdout lines 2–24, destination header omitted](assets/screenshots/q88-terminal-lead-print.png)
+
+Real print-only Terminal output, cropped to stdout lines 2–24 with the destination header omitted. This shows instruction rendering only: nothing was installed, and it is not live-host activation, runtime or native acceptance.
