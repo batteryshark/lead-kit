@@ -1,23 +1,16 @@
 # Rights and license scope
 
-The principal approved MIT for their own previously unlicensed code on
-2026-10-17. [LICENSE](LICENSE), copyright 2026 batteryshark, now licenses the
-original owned Lead source and associated documentation. Retain the copyright
-and permission notice with copies or substantial portions. Outside material
-keeps its own terms; no outside ownership or redistribution right is asserted.
+The original owned Lead source and associated documentation are licensed under
+the [MIT License](LICENSE), copyright 2026 batteryshark. Retain its copyright and
+permission notice with copies or substantial portions.
 
-LICENSE and RIGHTS are root packaging additions, outside the unchanged pinned
-26-file module consumed by Chief. The README, ATTRIBUTION and PROVENANCE retain
-their exact historical bytes to preserve canonical/vendor parity and pins.
-Their pending-license statements describe the earlier snapshot; this root
-LICENSE/RIGHTS records the subsequent owned-code decision. Chief's root grant
-also covers the owned vendored Lead source; no vendor edit, fork, composer
-change or canonical cutover was made. Preserve all existing attribution/notices.
+The comic marks in `assets/workstack-mark*.png` are **AI-generated artwork**.
+They are offered under the same MIT terms to the extent applicable. No exclusive
+copyright in AI-generated elements is claimed. The terminal capture in
+`assets/screenshots/` depicts this kit's instruction rendering and is also
+offered under MIT to the extent of rights held.
 
-Host harnesses, optional services and their dependencies, models, SDKs,
-compilers, libraries, vendor software, reference audio, recordings, media,
-artwork and binaries are not licensed by this new grant. Dependencies retain
-their own licenses, notices, attribution and any source-availability obligations;
-review exact versions and intended distribution separately. No generated content
-receives a new license. This is not a complete rights audit or scanner/privacy,
-asset, native/runtime, push, publication or release clearance.
+Host applications, models, optional services and other third-party material
+retain their own terms. None of their software or dependencies is bundled here,
+and this license does not grant rights in their names or marks. Preserve any
+applicable third-party notices when adding or distributing outside material.

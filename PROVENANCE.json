@@ -133,6 +133,6 @@
     "scripts/render.py": "06eb5ca9e4702e267117c6940c55b37b0e0b34a62a23e1764744163adbf82945",
     "tests/test_standalone.py": "5185df5fdc2efc9d9db4c8766965726622fa1a2612d31123e9de86c0350c7917"
   },
-  "edits": "See inventory/staging-chief-lead.md in the staging review project; module split, portable optional service guides, operator-owned policy seeds and offline fixtures. No source history imported.",
-  "rights": "License decision pending; no new grant; preserve upstream attribution."
+  "edits": "Historical source snapshot: module split, portable optional service guides, operator-owned policy seeds and offline fixtures. No original source history imported. The content hashes describe the original snapshot, not later README, attribution, licensing or artwork updates. They are not a verification manifest for the current tree.",
+  "rights": "Owned source and documentation are MIT-licensed; see LICENSE and RIGHTS.md for current terms and AI-generated artwork scope."
 }

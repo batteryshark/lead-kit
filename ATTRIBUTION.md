@@ -1,9 +1,7 @@
-# Attribution and rights gate
+# Attribution
 
 Derived from batteryshark's Chief-of-staff kit, product baseline 8acfec8,
 final source pin 6623f0f2b240336948614e5a84c85806f01cacef. Original source
-authorship and third-party notices are retained; this split is not a new grant.
-No project license was supplied/selected. Redistribution and release await the
-principal's rights/license decision. Chief's optional npm dependencies retain
-their upstream licenses; none of their code or generated bundles is included.
-No logos, screenshots, demos, vendor binaries or media are included.
+authorship and third-party notices are retained. The owned source and docs are
+MIT-licensed; see [LICENSE](LICENSE) and [RIGHTS.md](RIGHTS.md) for scope and the
+AI-generated artwork notice. Chief's optional npm dependencies are not bundled.
