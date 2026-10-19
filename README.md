@@ -88,20 +88,25 @@ The installer uses the selected `HOME` and writes two resources per host:
 - Codex: `.codex/<agent>.config.toml` (a named CLI profile) and
   `.agents/skills/<agent>-checkpoint/SKILL.md`.
 
-It records the installed name under `.local/state/lead-kit/`, keyed by config
-path. Reinstall from the same config path after changing hosts, packs or the
-agent name: previous managed outputs are removed. To undo the install:
+It records the installed name, hosts and output paths under `.local/state/lead-kit/`,
+keyed by config path. Each output carries that installation's identity; another
+config cannot claim it. Reinstall from the same config path after changing hosts,
+packs or the agent name: recorded stale outputs are removed. To undo the install:
 
 ```sh
 bash install.sh --lead-config my-lead.json --uninstall
 ```
 
 Uninstall before moving or copying a config to a different path. Edit the source
-or config and reinstall instead of editing managed files. Unowned output files
-and symlinks below `HOME` block conflicting operations; all candidate paths are
-checked before writes. Unowned stale files are retained. Empty directories may
-remain. Files are replaced individually, so an I/O failure can leave a partial
-install; concurrent path replacement is outside the guard's protection.
+or config and reinstall instead of editing managed files. Preflight checks selected
+outputs, recorded outputs and install records before writes. Unowned files and
+symlinks on those paths block changes; unrelated host roots are left alone. Empty
+directories may remain. Files are replaced individually, so an I/O failure can
+leave a partial install; concurrent path replacement is outside the guard's protection.
+
+Older install records and name-only markers require manual migration: review and
+move the old outputs and their record aside, then reinstall. The installer won't
+adopt or remove those files automatically.
 
 Version 1 configs receive a migration error: set `version` to `2`, rename `packs`
 to `practices`, and add explicit `hosts` and `capabilities` lists. Agent-owner mode

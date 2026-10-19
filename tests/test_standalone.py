@@ -29,8 +29,8 @@ class StandaloneTests(unittest.TestCase):
         self.config = dict(version=2, agent='study-lead', hosts=['opencode'], practices=[], capabilities=[],
                            owner=dict(mode='principal', style='Short outcomes.'))
 
-    def run_install(self, *args, config=None):
-        file = self.root / 'config.json'
+    def run_install(self, *args, config=None, config_name='config.json'):
+        file = self.root / config_name
         file.write_text(json.dumps(self.config if config is None else config))
         return subprocess.run(['bash', str(SRC / 'install.sh'), '--lead-config', str(file), *args],
                               env=self.env, capture_output=True, text=True, timeout=15)
@@ -38,8 +38,20 @@ class StandaloneTests(unittest.TestCase):
     def snapshot(self):
         return {str(p.relative_to(self.home)): p.read_bytes() for p in self.home.rglob('*') if p.is_file()}
 
-    def ok(self, *args, config=None):
-        result = self.run_install(*args, config=config)
+    def tree_snapshot(self):
+        return {str(p.relative_to(self.home)): ('link', os.readlink(p)) if p.is_symlink()
+                else ('dir',) if p.is_dir() else ('file', p.read_bytes())
+                for p in self.home.rglob('*')}
+
+    def rejects_without_mutation(self, **kwargs):
+        before = self.tree_snapshot()
+        for mode in ((), ('--print',), ('--dry-run',), ('--uninstall',)):
+            result = self.run_install(*mode, **kwargs)
+            self.assertNotEqual(result.returncode, 0, result.stdout)
+            self.assertEqual(before, self.tree_snapshot())
+
+    def ok(self, *args, config=None, config_name='config.json'):
+        result = self.run_install(*args, config=config, config_name=config_name)
         self.assertEqual(result.returncode, 0, result.stderr)
         return result.stdout
 
@@ -52,6 +64,7 @@ class StandaloneTests(unittest.TestCase):
                 self.config['hosts'] = [host]
                 printed = self.ok('--print')
                 self.assertEqual(printed, self.ok('--print'))
+                self.assertNotIn(str(self.root / 'config.json'), printed)
                 self.ok('--dry-run')
                 self.assertFalse(self.snapshot())
                 self.assertNotIn('{{', printed)
@@ -61,6 +74,12 @@ class StandaloneTests(unittest.TestCase):
                 self.assertIn('Do not claim that a new session exists', printed)
                 self.ok()
                 self.assertEqual(len(self.snapshot()), 3)
+                state = next((self.home / '.local/state/lead-kit').glob('*.json'))
+                data = json.loads(state.read_text())
+                self.assertEqual(data['version'], 2)
+                self.assertEqual(data['installation'], state.stem)
+                self.assertEqual(data['hosts'], [host])
+                self.assertEqual(data['outputs'], [agent, checkpoint])
                 text = (self.home / agent).read_text()
                 for resource in (agent, checkpoint):
                     path = self.home / resource
@@ -177,17 +196,157 @@ class StandaloneTests(unittest.TestCase):
         self.ok('--uninstall')
         self.assertFalse(self.snapshot())
 
-    def test_legacy_owned_outputs_migrate_and_unowned_stale_survives(self):
+    def test_unrecorded_legacy_outputs_are_not_cleanup_candidates(self):
         old = self.home / '.codex/skills/study-lead-checkpoint/SKILL.md'
         old.parent.mkdir(parents=True)
         old.write_text('<!-- managed by chief-of-staff/install.sh; standalone lead study-lead -->\nlegacy')
         unowned = self.home / '.codex/study-lead.config.toml'
         unowned.write_text('keep')
         self.ok()
-        self.assertFalse(old.exists())
+        self.assertTrue(old.exists())
         self.assertEqual(unowned.read_text(), 'keep')
         self.ok('--uninstall')
+        self.assertTrue(old.exists())
         self.assertEqual(unowned.read_text(), 'keep')
+
+    def test_cross_config_same_host_name_collision_and_missing_outputs(self):
+        self.ok()
+        self.rejects_without_mutation(config_name='other.json')
+        # The registry still reserves paths if files have gone missing.
+        for p in (self.home / '.config/opencode').rglob('*.md'):
+            p.unlink()
+        self.rejects_without_mutation(config_name='other.json')
+
+    def test_disjoint_host_rename_and_uninstall_preserve_other_installation(self):
+        self.config['agent'] = 'alpha-lead'
+        self.ok()
+        other = {**self.config, 'agent': 'beta-lead', 'hosts': ['claude']}
+        self.ok(config=other, config_name='other.json')
+        other_bytes = {p: b for p, b in self.snapshot().items() if p.startswith('.claude/')}
+        other_state = next(p for p in (self.home / '.local/state/lead-kit').glob('*.json')
+                           if json.loads(p.read_text())['agent'] == 'beta-lead')
+        record_bytes = other_state.read_bytes()
+        self.config['agent'] = 'beta-lead'
+        before = self.tree_snapshot()
+        self.ok('--print')
+        self.assertEqual(before, self.tree_snapshot())
+        self.ok()
+        self.assertEqual(other_bytes, {p: b for p, b in self.snapshot().items() if p.startswith('.claude/')})
+        self.assertEqual(record_bytes, other_state.read_bytes())
+        for mode in ('--uninstall', None, '--uninstall'):
+            self.ok(*([mode] if mode else []))
+            self.assertEqual(record_bytes, other_state.read_bytes())
+            self.assertEqual(other_bytes, {p: b for p, b in self.snapshot().items() if p.startswith('.claude/')})
+        self.ok('--uninstall', config=other, config_name='other.json')
+        self.assertFalse(self.snapshot())
+
+    def test_collision_during_host_change_preserves_both_records(self):
+        self.ok()
+        other = {**self.config, 'hosts': ['claude']}
+        self.ok(config=other, config_name='other.json')
+        self.rejects_without_mutation(config={**self.config, 'hosts': ['claude']})
+        self.ok('--uninstall')
+        self.rejects_without_mutation(config={**self.config, 'hosts': ['claude']})
+        self.ok('--uninstall', config=other, config_name='other.json')
+        self.ok(config={**self.config, 'hosts': ['claude']})
+
+    def test_unselected_host_symlink_is_not_preflighted(self):
+        outside = self.root / 'outside'
+        outside.mkdir()
+        (outside / 'sentinel').write_bytes(b'keep')
+        (self.home / '.claude').symlink_to(outside, target_is_directory=True)
+        before = self.tree_snapshot()
+        printed = self.ok('--print')
+        self.assertEqual(printed, self.ok('--print'))
+        self.ok('--dry-run')
+        self.assertEqual(before, self.tree_snapshot())
+        self.ok()
+        self.ok('--uninstall')
+        self.assertEqual(b'keep', (outside / 'sentinel').read_bytes())
+        self.assertEqual([outside / 'sentinel'], list(outside.iterdir()))
+        self.assertEqual(before['.claude'], self.tree_snapshot()['.claude'])
+
+    def test_recorded_old_host_symlink_blocks_all_mutation(self):
+        self.config['hosts'] = ['claude']
+        self.ok()
+        host = self.home / '.claude'
+        moved = self.root / 'saved-claude'
+        host.rename(moved)
+        saved = {str(p.relative_to(moved)): p.read_bytes() for p in moved.rglob('*') if p.is_file()}
+        host.symlink_to(moved, target_is_directory=True)
+        self.config.update(hosts=['opencode'], agent='renamed-lead')
+        self.rejects_without_mutation()
+        self.assertEqual(saved, {str(p.relative_to(moved)): p.read_bytes()
+                                 for p in moved.rglob('*') if p.is_file()})
+
+    def test_name_only_and_chief_markers_never_authorize_adoption(self):
+        target = self.home / '.config/opencode/agents/study-lead.md'
+        target.parent.mkdir(parents=True)
+        for label in ('managed by lead-kit/install.sh; lead study-lead',
+                      'managed by chief-of-staff/install.sh; standalone lead study-lead'):
+            target.write_text(f'<!-- {label} -->\nlegacy')
+            self.rejects_without_mutation()
+
+    def test_legacy_records_require_explicit_migration(self):
+        self.ok()
+        state = next((self.home / '.local/state/lead-kit').glob('*.json'))
+        state.write_text(json.dumps({'version': 1, 'agent': self.config['agent']}))
+        self.rejects_without_mutation()
+        self.rejects_without_mutation(config_name='other.json')
+
+    def test_recorded_outputs_require_matching_identity_even_when_stale(self):
+        self.ok()
+        target = self.home / '.config/opencode/commands/study-lead-checkpoint.md'
+        state = next((self.home / '.local/state/lead-kit').glob('*.json'))
+        target.write_text(target.read_text().replace(state.stem, '0' * 24))
+        self.rejects_without_mutation()
+        self.config.update(agent='renamed-lead', hosts=['claude'])
+        self.rejects_without_mutation()
+
+    def test_records_cannot_claim_arbitrary_or_unrecorded_paths(self):
+        self.ok()
+        state = next((self.home / '.local/state/lead-kit').glob('*.json'))
+        original = json.loads(state.read_text())
+        sentinel = self.home / 'sentinel'
+        sentinel.write_bytes(b'keep')
+        bad_records = [
+            {**original, 'outputs': ['sentinel']},
+            {**original, 'outputs': [str(sentinel)]},
+            {**original, 'outputs': ['../sentinel']},
+            {**original, 'hosts': ['legacy']},
+            {**original, 'hosts': ['opencode', 'opencode']},
+            {**original, 'installation': '0' * 24},
+            {**original, 'agent': '../escape'},
+            {**original, 'extra': True},
+            {**original, 'version': True},
+            {**original, 'outputs': original['outputs'][:1]},
+        ]
+        for data in bad_records:
+            with self.subTest(record=data):
+                state.write_text(json.dumps(data))
+                self.rejects_without_mutation()
+        for text in ('{', '[]', 'null'):
+            state.write_text(text)
+            self.rejects_without_mutation()
+        state.write_text(json.dumps(original))
+        # An identity marker without its record is not authority either.
+        state.unlink()
+        self.rejects_without_mutation()
+
+    def test_other_registry_record_validation_and_symlinks(self):
+        self.ok()
+        directory = self.home / '.local/state/lead-kit'
+        own = next(directory.glob('*.json'))
+        other = directory / ('0' * 24 + '.json')
+        other.write_text(own.read_text())
+        self.rejects_without_mutation()
+        other.unlink()
+        other.symlink_to(own)
+        self.rejects_without_mutation()
+        other.unlink()
+        other = directory / 'unexpected.json'
+        other.write_text(own.read_text())
+        self.rejects_without_mutation()
 
     def test_unowned_last_target_blocks_all_modes(self):
         self.ok()
@@ -203,6 +362,7 @@ class StandaloneTests(unittest.TestCase):
         outside.mkdir()
         (outside / 'sentinel').write_text('keep')
         (self.home / '.config').symlink_to(outside, target_is_directory=True)
+        self.rejects_without_mutation()
         for mode in ((), ('--uninstall',), ('--print',), ('--dry-run',)):
             result = self.run_install(*mode)
             self.assertNotEqual(result.returncode, 0)
@@ -213,7 +373,8 @@ class StandaloneTests(unittest.TestCase):
         leaf = self.home / '.config/opencode/agents/study-lead.md'
         leaf.unlink()
         leaf.symlink_to(outside / 'sentinel')
-        self.assertNotEqual(self.run_install().returncode, 0)
+        self.rejects_without_mutation()
+        self.assertEqual('keep', (outside / 'sentinel').read_text())
 
     def test_state_symlink_and_corruption_block_changes(self):
         self.ok()
@@ -224,7 +385,7 @@ class StandaloneTests(unittest.TestCase):
         self.assertEqual(before, self.snapshot())
         state.unlink()
         state.symlink_to(self.root / 'missing')
-        self.assertNotEqual(self.run_install().returncode, 0)
+        self.rejects_without_mutation()
 
     def test_selected_home_alias_allowed_and_destination_guards(self):
         alias = self.root / 'alias'
