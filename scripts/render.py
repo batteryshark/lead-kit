@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 
 SRC = Path(__file__).resolve().parent.parent
-HOSTS = ('opencode', 'claude', 'codex')
+HOSTS = ('opencode', 'claude', 'codex', 'pi')
 ID = r'[a-z][a-z0-9-]{0,47}'
 RESERVED = {'lead', 'chief-of-staff', 'shape', 'checkpoint', 'build', 'plan',
             'general', 'explore', 'default', 'worker', 'explorer'}

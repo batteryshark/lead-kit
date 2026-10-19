@@ -59,7 +59,8 @@ class StandaloneTests(unittest.TestCase):
         for host, agent, checkpoint in [
             ('opencode', '.config/opencode/agents/study-lead.md', '.config/opencode/commands/study-lead-checkpoint.md'),
             ('claude', '.claude/agents/study-lead.md', '.claude/skills/study-lead-checkpoint/SKILL.md'),
-            ('codex', '.codex/study-lead.config.toml', '.agents/skills/study-lead-checkpoint/SKILL.md')]:
+            ('codex', '.codex/study-lead.config.toml', '.agents/skills/study-lead-checkpoint/SKILL.md'),
+            ('pi', '.pi/agent/prompts/study-lead.md', '.pi/agent/skills/study-lead-checkpoint/SKILL.md')]:
             with self.subTest(host=host):
                 self.config['hosts'] = [host]
                 printed = self.ok('--print')
@@ -68,7 +69,8 @@ class StandaloneTests(unittest.TestCase):
                 self.ok('--dry-run')
                 self.assertFalse(self.snapshot())
                 self.assertNotIn('{{', printed)
-                for absent in ('a2a', 'openchamber', 'runway', 'tarmac', 'docket', 'fleet', 'chief'):
+                for absent in ('a2a', 'openchamber', 'runway', 'tarmac', 'docket', 'fleet', 'chief',
+                               'pi-subagents', 'pi-goal-x', 'subagents_enable', 'get_goal', 'create_goal'):
                     self.assertNotIn(absent, printed.lower())
                 self.assertIn('work yourself', printed)
                 self.assertIn('Do not claim that a new session exists', printed)
@@ -93,6 +95,15 @@ class StandaloneTests(unittest.TestCase):
                 elif host == 'claude':
                     self.assertIn('name: study-lead', text)
                     self.assertIn('claude --agent study-lead', text)
+                elif host == 'pi':
+                    self.assertTrue(text.startswith('---\ndescription:'))
+                    self.assertIn('argument-hint: "[task]"', text)
+                    self.assertIn('Operator request: $ARGUMENTS', text)
+                    self.assertIn('/study-lead <task>', text)
+                    self.assertIn('/skill:study-lead-checkpoint', text)
+                    skill = (self.home / checkpoint).read_text()
+                    self.assertTrue(skill.startswith('---\nname: study-lead-checkpoint\n'))
+                    self.assertIn('/study-lead Read LEAD.md', skill)
                 else:
                     try:
                         import tomllib
@@ -114,7 +125,8 @@ class StandaloneTests(unittest.TestCase):
         for p in packs:
             selected = [p['id']] + p['requires']
             config = {**self.config, 'practices': selected if p['kind'] == 'practice' else [],
-                      'capabilities': selected if p['kind'] == 'capability' else []}
+                      'capabilities': selected if p['kind'] == 'capability' else [],
+                      'hosts': [p['hosts'][0]]}
             printed = self.ok('--print', config=config)
             for item in packs:
                 content = render.read(item['content'])
@@ -440,6 +452,122 @@ class StandaloneTests(unittest.TestCase):
         for style in ('', 'line\nbreak', '`code`'):
             self.assertNotEqual(self.run_install(config={**self.config, 'owner': {'mode': 'principal', 'style': style}}).returncode, 0)
         self.assertFalse(self.snapshot())
+
+    def test_pi_capability_matrix_and_preview_agreement(self):
+        self.config['hosts'] = ['pi']
+        for selected in ([], ['pi-subagents'], ['pi-goal-x'], ['pi-goal-x', 'pi-subagents']):
+            with self.subTest(selected=selected):
+                self.config['capabilities'] = selected
+                printed = self.ok('--print')
+                self.ok('--dry-run')
+                self.assertFalse(self.snapshot())
+                self.ok()
+                for path, data in self.snapshot().items():
+                    if path.endswith('.md'):
+                        self.assertIn(f'=== {self.home / path}\n{data.decode()}\n', printed)
+                for pack, token in [('pi-subagents', 'subagents_enable'), ('pi-goal-x', 'get_goal')]:
+                    self.assertEqual(token in printed, pack in selected)
+                if 'pi-subagents' in selected:
+                    for token in ('async: false', 'timeoutMs: 120000', 'action: "status"', 'receipt confirms launch only'):
+                        self.assertIn(token, printed)
+                if 'pi-goal-x' in selected:
+                    for token in ('operator explicitly requests goal mode', 'status: "paused"',
+                                  'status: "complete"', 'unset means unlimited', 'strictExecutionContract'):
+                        self.assertIn(token, printed)
+                for absent in ('openchamber', 'a2a_send', 'returnResult'):
+                    self.assertNotIn(absent, printed)
+                self.ok('--uninstall')
+                self.assertFalse(self.snapshot())
+
+    def test_pi_selection_and_multi_host_rules(self):
+        for pack in ('pi-subagents', 'pi-goal-x'):
+            for hosts in (['opencode'], ['claude'], ['codex'], ['pi', 'opencode']):
+                self.rejects_without_mutation(config={**self.config, 'hosts': hosts, 'capabilities': [pack]})
+        for pack in ('a2a', 'openchamber', 'runway'):
+            self.rejects_without_mutation(config={**self.config, 'hosts': ['pi'], 'capabilities': [pack]})
+        owner = dict(mode='agent', integration='openchamber', pointer='/operator/owner.json', label='owner')
+        self.rejects_without_mutation(config={**self.config, 'hosts': ['pi'], 'owner': owner})
+        self.config.update(hosts=list(render.HOSTS), practices=['engineering'])
+        printed = self.ok('--print')
+        self.ok()
+        self.assertEqual(len(self.snapshot()), 9)
+        self.assertEqual(printed.count('# Project lead'), 4)
+        for path, data in self.snapshot().items():
+            if path.endswith('.md') and not path.startswith('.pi/'):
+                for token in (b'Pi host', b'subagents_enable', b'get_goal', b'pi-goal-x'):
+                    self.assertNotIn(token, data)
+        self.ok('--uninstall')
+        self.assertFalse(self.snapshot())
+
+    def test_pi_same_config_host_changes_and_reservations(self):
+        self.ok()
+        self.config['hosts'] = ['pi']
+        self.assertIn('would remove', self.ok('--print'))
+        self.ok()
+        self.assertFalse(any(p.startswith('.config/opencode/') for p in self.snapshot()))
+        self.rejects_without_mutation(config_name='other.json')
+        for path in (self.home / '.pi').rglob('*.md'):
+            path.unlink()
+        self.rejects_without_mutation(config_name='other.json')
+        self.ok()  # Only the owning config can repair missing outputs.
+        other = {**self.config, 'hosts': ['claude']}
+        self.ok(config=other, config_name='other.json')
+        self.rejects_without_mutation(config=other)
+        self.ok('--uninstall', config=other, config_name='other.json')
+        self.config.update(hosts=['codex'], agent='renamed-lead')
+        self.ok()
+        self.assertFalse(any(p.startswith('.pi/') for p in self.snapshot()))
+        self.ok('--uninstall')
+        self.assertFalse(self.snapshot())
+
+    def test_pi_path_guards_and_unselected_symlink(self):
+        outside = self.root / 'outside'
+        outside.mkdir()
+        sentinel = outside / 'sentinel'
+        sentinel.write_bytes(b'keep')
+        link = self.home / '.pi'
+        link.symlink_to(outside, target_is_directory=True)
+        self.ok('--print')
+        self.ok('--dry-run')
+        self.ok()
+        self.ok('--uninstall')
+        self.config['hosts'] = ['pi']
+        self.rejects_without_mutation()
+        link.unlink()
+        # Cover both resource leaves and their parent directories.
+        for relative in ('.pi/agent/prompts', '.pi/agent/skills',
+                         '.pi/agent/prompts/study-lead.md',
+                         '.pi/agent/skills/study-lead-checkpoint/SKILL.md'):
+            path = self.home / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.symlink_to(outside, target_is_directory=True)
+            self.rejects_without_mutation()
+            path.unlink()
+        self.ok()
+        old = self.home / '.pi'
+        saved = self.root / 'saved-pi'
+        old.rename(saved)
+        saved_bytes = {str(p.relative_to(saved)): p.read_bytes() for p in saved.rglob('*') if p.is_file()}
+        old.symlink_to(saved, target_is_directory=True)
+        self.config['hosts'] = ['claude']
+        self.rejects_without_mutation()
+        self.assertEqual(saved_bytes, {str(p.relative_to(saved)): p.read_bytes() for p in saved.rglob('*') if p.is_file()})
+        self.assertEqual(list(outside.iterdir()), [sentinel])
+        self.assertEqual(sentinel.read_bytes(), b'keep')
+
+    def test_pi_unowned_and_mismatched_checkpoint_block_all_modes(self):
+        self.config['hosts'] = ['pi']
+        target = self.home / '.pi/agent/skills/study-lead-checkpoint/SKILL.md'
+        target.parent.mkdir(parents=True)
+        target.write_text('manual skill')
+        self.rejects_without_mutation()
+        target.unlink()
+        self.ok()
+        state = next((self.home / '.local/state/lead-kit').glob('*.json'))
+        target.write_text(target.read_text().replace(state.stem, '0' * 24))
+        self.rejects_without_mutation()
+        self.config.update(hosts=['opencode'], agent='renamed-lead')
+        self.rejects_without_mutation()
 
 
 if __name__ == '__main__':

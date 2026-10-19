@@ -2,7 +2,7 @@
 
 Config version 2 accepts exactly `version`, `agent`, `hosts`, `practices`,
 `capabilities` and `owner`. Lists must contain unique known IDs. `hosts` must
-contain at least one of `opencode`, `claude`, `codex`; the pack lists may be empty.
+contain at least one of `opencode`, `claude`, `codex`, `pi`; the pack lists may be empty.
 A selected pack must support every selected host. Prerequisites must be selected
 explicitly; the renderer never adds a pack for you. Unknown fields fail validation.
 
@@ -24,7 +24,7 @@ needs real values before use. Invalid pointers or unavailable delivery tools
 produce a logged blocker and a request to the principal in the current conversation.
 
 A2A communication does not implicitly select the reporting channel. No agent-owner
-binding is shipped for Claude, Codex or A2A. Use principal mode on those paths.
+binding is shipped for Claude, Codex, Pi or A2A. Use principal mode on those paths.
 
 ## Register a pack
 
@@ -72,7 +72,12 @@ Its entry instructs the lead to read the installed `routing/WORKFLOW.md` before
 calling `usage`, `plan`, `prepare`, `bind` or `finish`. The installed workflow
 supplies request syntax and policy; this kit ships no quota service or policy data.
 
-`docket` and `fleet` work as optional guidance on all three hosts. Each requires
+`pi-subagents` and `pi-goal-x` each target only Pi, with no pack dependencies.
+Both require the corresponding operator-installed extension. See [Pi](pi.md)
+for pinned interfaces and prerequisites. A mixed-host config with either pack
+fails validation before writes; use separate configs for those integrations.
+
+`docket` and `fleet` work as optional guidance on all four hosts. Each requires
 an operator-configured installation and its usage guide. Fleet's service
 instructions apply to macOS. Pack selection does not validate the operating
 system or authorize service startup.
@@ -108,3 +113,6 @@ agent names.
 - [Codex profiles](https://developers.openai.com/codex/config-file/config-advanced/#profiles),
   [subagents](https://developers.openai.com/codex/agent-configuration/subagents) and
   [skills](https://developers.openai.com/codex/build-skills).
+- [Pi 1.0.0 prompt templates](https://github.com/earendil-works/pi/blob/v1.0.0/packages/coding-agent/docs/prompt-templates.md),
+  [skills](https://github.com/earendil-works/pi/blob/v1.0.0/packages/coding-agent/docs/skills.md)
+  and [configuration](https://github.com/earendil-works/pi/blob/v1.0.0/packages/coding-agent/docs/configuration.md).

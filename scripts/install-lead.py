@@ -29,6 +29,7 @@ def paths(home, name):
                      home / f'.config/opencode/commands/{checkpoint}.md'],
         'claude': [home / f'.claude/agents/{name}.md', home / f'.claude/skills/{checkpoint}/SKILL.md'],
         'codex': [home / f'.codex/{name}.config.toml', home / f'.agents/skills/{checkpoint}/SKILL.md'],
+        'pi': [home / f'.pi/agent/prompts/{name}.md', home / f'.pi/agent/skills/{checkpoint}/SKILL.md'],
         'legacy': [home / f'.codex/skills/{checkpoint}/SKILL.md']}
 
 
@@ -53,6 +54,9 @@ def render_outputs(home, config, values, key):
             checkpoint_text = (f'---\nname: {values["CHECKPOINT_NAME"]}\n'
                                'description: Save project state before handover or when context grows long\n---\n'
                                f'<!-- {marker(name, key)} -->\n\n{checkpoint}\n')
+            if host == 'pi':
+                checkpoint_text += (f'\nFor a fresh Pi session, start `pi` in this project, then invoke '
+                                    f'`/{name} Read LEAD.md and resume the recorded next action.`\n')
         agent_path, checkpoint_path = paths(home, name)[host]
         outputs[agent_path] = agent_text
         outputs[checkpoint_path] = checkpoint_text
