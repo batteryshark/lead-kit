@@ -5,8 +5,10 @@ Use Pi 1.0.0 with its default `~/.pi/agent` directory. The npm host package is
 host and model separately before using the installed resources. The kit never
 probes your Pi installation, auth or settings.
 
-Follow the [README Pi path](../README.md#pi-10) to select, preview and install
-[examples/pi.json](../examples/pi.json). With empty `capabilities`, the lead uses
+Follow the [README Pi path](../README.md#pi-10) to preview and install with
+`--preset pi`. For custom packs, copy [presets/pi.json](../presets/pi.json) to a
+stable saved config path and use `--lead-config` for each mode. Uninstall an
+existing preset first if the copy keeps its name. With empty `capabilities`, the lead uses
 Pi's ordinary tools and does the work itself. `/<agent> <task>` expands the one
 rendered prompt; `/skill:<agent>-checkpoint [fresh]` loads the checkpoint skill.
 The prompt has `description` and `argument-hint` metadata and appends `$ARGUMENTS`.

@@ -2,72 +2,34 @@
 
 <p><a href="assets/workstack-mark-full.png"><img src="assets/workstack-mark.png" alt="A beaver in a hard hat holding a project map" width="160"></a></p>
 
-Lead kit installs a custom project-lead agent and a named checkpoint command or
-skill for OpenCode, Claude Code, Codex or Pi 1.0. Pi loads the lead as a prompt
-template in the main conversation. The lead plans work, implements changes
-or delegates bounded jobs, checks results and keeps decisions in `LEAD.md`.
-Checkpointing saves enough state for the next session to resume.
+Lead kit installs a project-lead agent that orchestrates work from a request
+through completion in OpenCode, Claude Code, Codex or Pi 1.0. It turns the agreed
+outcome into a plan, allocates the time and resources you've assigned, and
+distributes bounded jobs when worker tools are available. The lead coordinates
+dependencies and merges, resolves overlapping changes, and verifies the combined
+result. When findings or resource limits call for a different approach, it brings
+you the decision and updates the plan. It can also do the work itself.
 
 For a database migration, give the lead the schema change, compatibility rules
-and acceptance tests. It can inspect the code, plan the migration, implement and
-test it, then record the evidence and rollback steps. With worker tools available,
-it can assign implementation and review separately. It asks you before changing
-scope or publishing the result.
-
-## Choose your lead
-
-One JSON config selects the agent name, hosts, practice packs and capabilities.
-Start with [examples/principal.json](examples/principal.json), which reports to
-you in the current conversation:
-
-```json
-{
-  "version": 2,
-  "agent": "project-lead",
-  "hosts": ["opencode"],
-  "practices": ["engineering"],
-  "capabilities": [],
-  "owner": {
-    "mode": "principal",
-    "style": "Short outcomes with evidence on request."
-  }
-}
-```
-
-Use `claude`, `codex` or `pi` for another host, or list several hosts explicitly.
-Practices are `engineering`, `research` and `life-admin`; an empty list uses
-only the core project-leading instructions. Capabilities are opt-in:
-
-- `a2a`: peer messages and authorized local workers.
-- `openchamber`: session operations, agent-owner reporting and requested handoffs.
-- `runway`: Runway / Tarmac quota routing; requires `openchamber`.
-- `docket`: guidance for an operator-configured scheduler.
-- `fleet`: guidance for an operator-configured macOS service registry.
-- `pi-subagents`: bounded delegation with nicobailon's Pi extension.
-- `pi-goal-x`: persistent goals and completion review with tmonk's Pi extension.
-
-The first three capability packs target OpenCode with their corresponding tools
-already configured. A2A and OpenChamber can be selected independently. Missing
-tools block the requested integration action while local project work continues.
-The installer validates selections without contacting hosts or installing tools.
-The two Pi packs target only Pi and can be selected independently. Every selected
-pack must support every selected host; use separate configs for host-specific packs.
+and acceptance tests. The lead can split implementation and review between
+workers, reconcile their changes, and check upgrade and rollback together. If
+the old reader can't remain compatible, it raises that finding before proceeding.
+Decisions and verification evidence go in `LEAD.md`; the installed checkpoint
+command or skill saves the next action for a successor session.
 
 ## Preview and install
 
-From this checkout, with Bash and Python 3.9+ available:
+From this checkout, with Bash 3.2+ and Python 3.9+ available:
 
 ```sh
-cp examples/principal.json my-lead.json
-bash install.sh --list-packs
-bash install.sh --lead-config my-lead.json --print
-bash install.sh --lead-config my-lead.json --dry-run
-bash install.sh --lead-config my-lead.json
+bash install.sh --preset opencode --print
+bash install.sh --preset opencode
 ```
 
-Edit `my-lead.json` before previewing to change the selections. `--print` shows
-the complete configured output and any stale managed files to remove. `--dry-run`
-lists destinations. Both modes leave the destination unchanged.
+Replace `opencode` with `claude`, `codex` or `pi` for your host. Each preset
+installs `project-lead` with engineering practice and reports to you in the current
+conversation. Only the chosen host receives files. `--print` shows the complete
+output; `--dry-run` lists destinations. Both are nonmutating, including on reinstall.
 
 In your engineering project's folder, put the agreed outcome and constraints in
 `PROJECT.md`. Select `project-lead` in OpenCode, run
@@ -85,29 +47,80 @@ asks you to start a successor unless a selected integration supports that action
 ### Pi 1.0
 
 Have Pi 1.0.0 (`@earendil-works/pi-coding-agent`) and Node.js 22.19+ set up
-outside this kit, with your chosen model available. Start with the base config:
+outside this kit, with your chosen model available:
 
 ```sh
-cp examples/pi.json my-pi-lead.json
-bash install.sh --lead-config my-pi-lead.json --print
-bash install.sh --lead-config my-pi-lead.json --dry-run
-bash install.sh --lead-config my-pi-lead.json
+bash install.sh --preset pi --print
+bash install.sh --preset pi
 ```
 
-In your project folder, start `pi`, then enter
+Pi loads the lead as a prompt template in the main conversation. In your project
+folder, start `pi`, then enter
 `/project-lead Add the migration described in PROJECT.md and maintain LEAD.md.`
 Use `/skill:project-lead-checkpoint` before handover, or append `fresh` for a
 copyable successor brief. Run `/reload` if Pi was already open during install.
 Load `/project-lead` again in each new conversation.
 
-The base lead does the work itself. For delegation, separately review and set up
-[pi-subagents 0.79.1](https://pi.dev/packages/pi-subagents). For explicitly
-requested autonomous goals, separately review and set up
-[pi-goal-x 0.32.3](https://pi.dev/packages/pi-goal-x). Set `capabilities` in
-`my-pi-lead.json` to `["pi-subagents"]`, `["pi-goal-x"]` or both, then repeat
-preview and install from the same config path. Selection writes guidance; package
-installation, Pi settings and goal activation remain under your control.
-See [Pi setup and interface evidence](docs/pi.md) for exact prerequisites and calls.
+For delegation, separately review and set up
+[pi-subagents 0.79.1](https://pi.dev/packages/pi-subagents). For explicitly requested
+autonomous goals, review and set up [pi-goal-x 0.32.3](https://pi.dev/packages/pi-goal-x).
+Select either or both through a saved config as described below. Package
+installation, Pi settings and goal activation remain under your control. See
+[Pi setup and interface evidence](docs/pi.md) for exact prerequisites and calls.
+
+## Optional packs and saved configs
+
+Practices add project methods: `engineering`, `research` and `life-admin`.
+Capabilities add instructions for integrations you've configured separately.
+The base agent plans against your stated resource limits; measured quota usage
+requires a configured integration.
+
+### OpenCode integrations
+
+- `a2a`: peer messages and authorized local workers.
+- `openchamber`: session operations, agent-owner reporting and requested handoffs.
+- `runway`: the Runway admission/worker-ledger adapter that dispatches prepared
+  OpenChamber arguments. Requires `openchamber` and the installed routing workflow.
+
+### Pi extensions
+
+For Pi 1.0, select either pack independently or use both:
+
+- `pi-subagents`: bounded delegation using pi-subagents 0.79.1.
+- `pi-goal-x`: explicitly requested persistent goals using pi-goal-x 0.32.3.
+
+### External services
+
+- [`tarmac`](https://github.com/batteryshark/tarmac): passive quota/usage awareness
+  from its independent REST API. Works on any supported host with authorized HTTP
+  access to the configured endpoint; it has no OpenChamber dependency.
+- [`docket`](https://github.com/batteryshark/docket): optional scheduling through
+  a separate project's API/CLI/MCP. A caller on another host may access the API,
+  but Docket's current delivery adapter wakes OpenCode sessions. Pi, Claude and
+  Codex wake delivery isn't supplied by this pack.
+
+To customize, copy the preset for your host and edit that saved file. If you've
+already installed the preset, first run `bash install.sh --preset opencode --uninstall`
+(using your host) so the new config can own the same agent name:
+
+```sh
+cp presets/opencode.json my-lead.json
+bash install.sh --list-packs
+bash install.sh --lead-config my-lead.json --print
+bash install.sh --lead-config my-lead.json --dry-run
+bash install.sh --lead-config my-lead.json
+```
+
+The JSON selects the agent name, hosts, practice IDs, capability IDs and reporting
+owner. For Pi, copy `presets/pi.json` and set `capabilities` to `["pi-subagents"]`,
+`["pi-goal-x"]` or both. Empty pack lists use only the core and host guidance.
+Every selected pack must support every selected host; use separate configs for
+host-specific capabilities. Missing tools block that integration action while
+local work continues. The installer never contacts hosts or installs integrations.
+
+Use exactly one of `--preset HOST` and `--lead-config FILE`.
+Separate config paths have separate installation identities.
+See [the configuration contract](docs/packs.md) for examples and service API details.
 
 ### Managed files
 
@@ -123,15 +136,18 @@ The installer uses the selected `HOME` and writes two resources per host:
   `.pi/agent/skills/<agent>-checkpoint/SKILL.md`.
 
 It records the installed name, hosts and output paths under `.local/state/lead-kit/`,
-keyed by config path. Each output carries that installation's identity; another
-config cannot claim it. Reinstall from the same config path after changing hosts,
-packs or the agent name: recorded stale outputs are removed. To undo the install:
+keyed by the canonical config path. `--preset opencode` always uses the shipped
+`presets/opencode.json`, including for preview and uninstall. Each output carries
+that installation's identity; another config cannot claim it. Reinstall from the
+same config path after changing hosts, packs or the agent name: recorded stale
+outputs are removed. To undo an OpenCode preset install:
 
 ```sh
-bash install.sh --lead-config my-lead.json --uninstall
+bash install.sh --preset opencode --uninstall
 ```
 
-Uninstall before moving or copying a config to a different path. Edit the source
+For a saved config, use `--lead-config my-lead.json --uninstall`. Uninstall before
+moving the checkout or moving a config used for installation. Edit the source
 or config and reinstall instead of editing managed files. Preflight checks selected
 outputs, recorded outputs and install records before writes. Unowned files and
 symlinks on those paths block changes; unrelated host roots are left alone. Empty

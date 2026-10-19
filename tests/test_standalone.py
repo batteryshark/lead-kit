@@ -1,5 +1,6 @@
 """Offline fixtures: isolated homes under this checkout; no harness activation."""
 import json
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -34,6 +35,10 @@ class StandaloneTests(unittest.TestCase):
         file.write_text(json.dumps(self.config if config is None else config))
         return subprocess.run(['bash', str(SRC / 'install.sh'), '--lead-config', str(file), *args],
                               env=self.env, capture_output=True, text=True, timeout=15)
+
+    def cli(self, *args):
+        return subprocess.run(['bash', str(SRC / 'install.sh'), *args], env=self.env,
+                              capture_output=True, text=True, timeout=15)
 
     def snapshot(self):
         return {str(p.relative_to(self.home)): p.read_bytes() for p in self.home.rglob('*') if p.is_file()}
@@ -422,8 +427,12 @@ class StandaloneTests(unittest.TestCase):
             with patch.object(render, 'read', side_effect=lambda p: json.dumps(bad) if p == 'packs.json' else original(p)):
                 with self.assertRaises(ValueError):
                     render.registry()
-        listed = self.ok('--list-packs')
+        result = self.cli('--list-packs')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        listed = result.stdout
         self.assertIn('requires: openchamber', listed)
+        for group in ('Practices:', 'OpenCode integrations:', 'Pi extensions:', 'External service integrations:'):
+            self.assertIn(group, listed)
         self.assertFalse(self.snapshot())
 
     def test_unknown_pack_placeholder_fails(self):
@@ -568,6 +577,136 @@ class StandaloneTests(unittest.TestCase):
         self.rejects_without_mutation()
         self.config.update(hosts=['opencode'], agent='renamed-lead')
         self.rejects_without_mutation()
+
+    def test_presets_preview_install_reinstall_and_uninstall_identity(self):
+        keys = set()
+        for host in render.HOSTS:
+            with self.subTest(host=host):
+                config_path = SRC / 'presets' / (host + '.json')
+                config = json.loads(config_path.read_text())
+                self.assertEqual(config['hosts'], [host])
+                self.assertEqual(config['agent'], 'project-lead')
+                self.assertEqual(config['capabilities'], [])
+                before = self.tree_snapshot()
+                preview = self.cli('--preset', host, '--print')
+                self.assertEqual(preview.returncode, 0, preview.stderr)
+                direct = self.cli('--lead-config', str(config_path), '--print')
+                self.assertEqual(direct.returncode, 0, direct.stderr)
+                self.assertEqual(preview.stdout, direct.stdout)
+                self.assertEqual(self.cli('--preset', host, '--dry-run').returncode, 0)
+                self.assertEqual(before, self.tree_snapshot())
+                self.assertFalse(list(self.root.glob('*.json')))  # No user-authored config.
+                self.assertEqual(self.cli('--preset', host).returncode, 0)
+                key = hashlib.sha256(str(config_path.resolve()).encode()).hexdigest()[:24]
+                keys.add(key)
+                state = self.home / '.local/state/lead-kit' / (key + '.json')
+                record = json.loads(state.read_text())
+                self.assertEqual(record['hosts'], [host])
+                self.assertEqual(record['installation'], key)
+                self.assertEqual(len(self.snapshot()), 3)
+                for relative in record['outputs']:
+                    path = self.home / relative
+                    self.assertIn('installation ' + key, path.read_text())
+                    self.assertIn(f'=== {path}\n{path.read_text()}\n', preview.stdout)
+                installed = self.tree_snapshot()
+                for args in (('--print',), ('--dry-run',), ()):
+                    result = self.cli('--preset', host, *args)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(installed, self.tree_snapshot())
+                self.assertEqual(self.cli('--lead-config', str(config_path), '--uninstall').returncode, 0)
+                self.assertFalse(self.snapshot())
+                self.assertEqual(self.cli('--preset', host).returncode, 0)
+                self.assertEqual(installed, self.tree_snapshot())
+                self.assertEqual(self.cli('--preset', host, '--uninstall').returncode, 0)
+                self.assertFalse(self.snapshot())
+        self.assertEqual(len(keys), 4)
+
+    def test_preset_flag_errors_are_nonmutating(self):
+        for args in ((), ('--preset',), ('--lead-config',), ('--preset', '--print'),
+                     ('--preset', 'unknown'), ('--preset', 'opencode', '--preset', 'pi'),
+                     ('--preset', 'pi', '--lead-config', 'missing.json'),
+                     ('--lead-config', 'missing.json', '--preset', 'pi'),
+                     ('--lead-config', 'a.json', '--lead-config', 'b.json'),
+                     ('--preset', 'opencode', '--print', '--dry-run'),
+                     ('--preset', 'opencode', '--uninstall', '--print'),
+                     ('--preset', 'pi', '--list-packs'), ('--list-packs', '--print'),
+                     ('--list-packs', '--list-packs'), ('pi',)):
+            before = self.tree_snapshot()
+            result = self.cli(*args)
+            self.assertNotEqual(result.returncode, 0, (args, result.stdout))
+            self.assertEqual(before, self.tree_snapshot())
+        help_text = self.cli('--help')
+        self.assertEqual(help_text.returncode, 0)
+        self.assertIn('--preset HOST | --lead-config FILE', help_text.stdout)
+
+    def test_preset_custom_copy_cannot_claim_installation(self):
+        self.assertEqual(self.cli('--preset', 'opencode').returncode, 0)
+        config = json.loads((SRC / 'presets/opencode.json').read_text())
+        self.rejects_without_mutation(config=config)
+        self.assertEqual(self.cli('--preset', 'opencode', '--uninstall').returncode, 0)
+        self.ok(config=config)
+        before = self.tree_snapshot()
+        self.assertNotEqual(self.cli('--preset', 'opencode').returncode, 0)
+        self.assertEqual(before, self.tree_snapshot())
+        self.ok('--uninstall', config=config)
+
+    def test_tarmac_selected_only_on_each_host_without_dispatch_dependency(self):
+        for host in render.HOSTS:
+            self.config.update(hosts=[host], capabilities=[])
+            self.assertNotIn('/api/v1/snapshot', self.ok('--print'))
+            self.config['capabilities'] = ['tarmac']
+            printed = self.ok('--print')
+            for token in ('GET /api/v1/snapshot', 'schema_version: 2', 'passive: true',
+                          'Reads need no bearer token', 'operator-provided endpoint',
+                          'Model-to-bucket applicability', 'Treat missing, stale or unknown',
+                          'does not reserve capacity', 'unit', 'fresh_until'):
+                self.assertIn(token, printed)
+            for absent in ('session.create', 'prepare`', 'a2a_send', 'subagents_enable', 'get_goal'):
+                self.assertNotIn(absent, printed)
+            self.ok()
+            for path, data in self.snapshot().items():
+                if path.endswith('.md'):
+                    self.assertIn(f'=== {self.home / path}\n{data.decode()}\n', printed)
+            self.ok('--uninstall')
+            self.assertFalse(self.snapshot())
+        pack = next(p for p in render.registry() if p['id'] == 'tarmac')
+        self.assertEqual(pack['requires'], [])
+        self.assertEqual(pack['hosts'], list(render.HOSTS))
+        self.rejects_without_mutation(config={**self.config, 'hosts': ['other']})
+
+    def test_removed_fleet_is_explicit_error_without_cleanup(self):
+        self.ok()
+        legacy = self.home / 'legacy-fleet-note.md'
+        legacy.write_text('unowned fixture; preserve')
+        self.config['capabilities'] = ['fleet']
+        self.rejects_without_mutation()
+        result = self.run_install('--print')
+        self.assertIn('capabilities must be a unique list of known IDs', result.stderr)
+        self.assertNotIn('fleet', [p['id'] for p in render.registry()])
+        self.assertNotIn('fleet', self.cli('--list-packs').stdout)
+        self.assertEqual(legacy.read_text(), 'unowned fixture; preserve')
+
+    def test_core_coordinates_resources_and_integration_in_actual_output(self):
+        for host in render.HOSTS:
+            self.config['hosts'] = [host]
+            printed = self.ok('--print')
+            for token in ('Take the work request through completion',
+                          'allocate a bounded share to each work lane',
+                          'Track committed work against the remaining allowance',
+                          "operator's stated limits", 'Never invent',
+                          'integration order', 'resolve merge',
+                          'combined acceptance checks', 'recommended pivot',
+                          "Obtain the owner's decision", 'work yourself'):
+                self.assertIn(token, printed)
+
+    def test_docket_caller_access_does_not_imply_host_wake_support(self):
+        for host in render.HOSTS:
+            self.config.update(hosts=[host], capabilities=['docket'])
+            printed = self.ok('--print')
+            for token in ('https://github.com/batteryshark/docket', 'authorized API access',
+                          'targets OpenCode sessions', 'does not give those sessions wake support',
+                          'unsupported', 'as blocked'):
+                self.assertIn(token, printed)
 
 
 if __name__ == '__main__':

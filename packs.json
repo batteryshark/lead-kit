@@ -4,9 +4,9 @@
   {"id":"life-admin","kind":"practice","hosts":["opencode","claude","codex","pi"],"requires":[],"content":"practices/life-admin/instructions.md","description":"Commitments and approved calendar actions"},
   {"id":"a2a","kind":"capability","hosts":["opencode"],"requires":[],"content":"capabilities/a2a/instructions.md","description":"Configured peer communication and authorized local workers"},
   {"id":"openchamber","kind":"capability","hosts":["opencode"],"requires":[],"content":"capabilities/openchamber/instructions.md","description":"Session dispatch, reporting and requested successor handoff"},
-  {"id":"runway","kind":"capability","hosts":["opencode"],"requires":["openchamber"],"content":"capabilities/runway/instructions.md","description":"Runway / Tarmac quota admission and worker ledger"},
-  {"id":"docket","kind":"capability","hosts":["opencode","claude","codex","pi"],"requires":[],"content":"capabilities/docket/instructions.md","description":"Operator-configured scheduling guidance"},
-  {"id":"fleet","kind":"capability","hosts":["opencode","claude","codex","pi"],"requires":[],"content":"capabilities/fleet/instructions.md","description":"Operator-configured macOS service registry guidance"},
+  {"id":"runway","kind":"capability","hosts":["opencode"],"requires":["openchamber"],"content":"capabilities/runway/instructions.md","description":"OpenCode Runway adapter: OpenChamber admission and worker ledger"},
+  {"id":"tarmac","kind":"capability","hosts":["opencode","claude","codex","pi"],"requires":[],"content":"capabilities/tarmac/instructions.md","description":"External Tarmac REST service: passive usage awareness through authorized HTTP"},
+  {"id":"docket","kind":"capability","hosts":["opencode","claude","codex","pi"],"requires":[],"content":"capabilities/docket/instructions.md","description":"External Docket API guidance; delivery currently targets OpenCode sessions"},
   {"id":"pi-subagents","kind":"capability","hosts":["pi"],"requires":[],"content":"capabilities/pi-subagents/instructions.md","description":"Bounded delegation with operator-installed pi-subagents 0.79.1"},
   {"id":"pi-goal-x","kind":"capability","hosts":["pi"],"requires":[],"content":"capabilities/pi-goal-x/instructions.md","description":"Explicit persistent goal execution with operator-installed pi-goal-x 0.32.3"}
 ]

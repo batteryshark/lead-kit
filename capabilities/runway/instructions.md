@@ -1,4 +1,4 @@
-## Capability: Runway / Tarmac quota routing
+## Capability: Runway OpenChamber dispatch adapter
 
 Use the operator's installed `runway` tool and routing/WORKFLOW.md contract.
 Read that workflow before the first call. Before dispatch, read `usage` to check

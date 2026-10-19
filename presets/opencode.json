@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "agent": "project-lead",
+  "hosts": ["opencode"],
+  "practices": ["engineering"],
+  "capabilities": [],
+  "owner": {"mode": "principal", "style": "Short outcomes with evidence on request."}
+}

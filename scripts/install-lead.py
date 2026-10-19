@@ -167,8 +167,16 @@ def main(config_path, mode):
 if __name__ == '__main__':
     try:
         if sys.argv[1:] == ['--list-packs']:
+            groups = {}
             for p in registry():
-                print(f"{p['kind']} {p['id']} | hosts: {', '.join(p['hosts'])} | requires: {', '.join(p['requires']) or 'none'} | {p['description']}")
+                group = ('Practices' if p['kind'] == 'practice' else
+                         'OpenCode integrations' if p['hosts'] == ['opencode'] else
+                         'Pi extensions' if p['hosts'] == ['pi'] else 'External service integrations')
+                groups.setdefault(group, []).append(p)
+            for group, packs in groups.items():
+                print(group + ':')
+                for p in packs:
+                    print(f"  {p['id']} | hosts: {', '.join(p['hosts'])} | requires: {', '.join(p['requires']) or 'none'} | {p['description']}")
         else:
             main(*sys.argv[1:])
     except (ValueError, KeyError, OSError, TypeError) as e:

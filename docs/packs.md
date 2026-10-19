@@ -1,5 +1,13 @@
 # Configuration and pack contract
 
+`--preset opencode|claude|codex|pi` selects the corresponding shipped
+`presets/<host>.json`: one host, agent `project-lead`, engineering practice,
+no capabilities and direct-principal reporting. All installer modes pass that
+same canonical path to the existing config-bound installer. No temporary config
+or new identity scheme is involved. Keep the checkout path stable while installed.
+Use `--lead-config FILE` for custom selections; both selectors together, repeated
+selectors and conflicting modes are errors. `--list-packs` is a standalone command.
+
 Config version 2 accepts exactly `version`, `agent`, `hosts`, `practices`,
 `capabilities` and `owner`. Lists must contain unique known IDs. `hosts` must
 contain at least one of `opencode`, `claude`, `codex`, `pi`; the pack lists may be empty.
@@ -60,7 +68,7 @@ The registry is read only from this checkout. Pack text is statically included;
 there is no runtime discovery or automatic integration setup. A new integration
 needs a verified tool contract before it can name calls or declare dependencies.
 
-## Current dependencies
+## OpenCode integrations
 
 `a2a` uses the exposed `a2a_create`, `a2a_send`, `a2a_list` and `a2a_read`
 contract. `openchamber` uses the exposed `openchamber` action/parameters contract.
@@ -72,15 +80,58 @@ Its entry instructs the lead to read the installed `routing/WORKFLOW.md` before
 calling `usage`, `plan`, `prepare`, `bind` or `finish`. The installed workflow
 supplies request syntax and policy; this kit ships no quota service or policy data.
 
+## Pi extensions
+
 `pi-subagents` and `pi-goal-x` each target only Pi, with no pack dependencies.
 Both require the corresponding operator-installed extension. See [Pi](pi.md)
 for pinned interfaces and prerequisites. A mixed-host config with either pack
 fails validation before writes; use separate configs for those integrations.
 
-`docket` and `fleet` work as optional guidance on all four hosts. Each requires
-an operator-configured installation and its usage guide. Fleet's service
-instructions apply to macOS. Pack selection does not validate the operating
-system or authorize service startup.
+## External service integrations
+
+`tarmac` and `docket` can render on all four hosts, with no pack prerequisites.
+Calling either service requires authorized access and an operator-configured
+endpoint. Rendering guidance does not add an HTTP tool or configure a service.
+
+### Tarmac usage observations
+
+[Tarmac](https://github.com/batteryshark/tarmac) is an independent REST service.
+Confirm the base URL and deployment auth from the operator or installed API
+guide. Its local API defaults to port 8767, but this pack does not discover or
+assume the running endpoint. With a reachable operator-approved URL, use a
+bounded HTTP `GET /api/v1/snapshot`. The documented local read needs no bearer
+token and enforces Host `127.0.0.1` or `localhost`; an Origin, if present, must
+also name a loopback host. Source mutations require bearer authentication and
+are outside this pack's read-only path. No auth-file search is needed.
+
+The snapshot returns `schema_version: 2`, `passive: true`, `sources` and `holds`.
+Unlike `/api/v1/status`, it neither marks a reader active nor queues demand
+refreshes or probes login state. `/api/v1/meta` lists adapters/provider kinds but
+marks a reader active; the minimal passive path doesn't need it. Source IDs and
+accounts come from the snapshot; model-to-bucket mappings come from the operator.
+Use source freshness and `latest.windows` with their units, age, reset and bucket
+identity. Stale/unknown readings and absent holds do not establish capacity.
+Observed burn is not a task-cost forecast. Tarmac supplies neither reservations
+nor worker dispatch; Runway's OpenChamber dependency belongs to that adapter.
+
+Contract evidence: Tarmac's README “Passive routing observations”,
+`tarmac/api.py` (`do_GET`, `_boundary_ok`, `_status`) and
+`tarmac/payloads.py` (`observation`, `source_payload`, `window_burns`). Check the
+installed version's guide before use. Service reachability and live readings
+aren't tested by lead-kit's offline suite.
+
+### Docket scheduling
+
+[Docket](https://github.com/batteryshark/docket) provides its own CLI, HTTP API
+and MCP guide. Authorized callers may use those interfaces from supported hosts;
+its current delivery adapter targets OpenCode sessions. Pi, Claude and Codex
+session wakes need their own delivery adapters, which this kit doesn't supply.
+Confirm the destination before scheduling and follow Docket's installed guide
+for endpoint/auth setup, bounded schedules and cancellation.
+
+Fleet is no longer a lead-kit capability. Existing configs selecting `fleet`
+fail as an unknown capability before writes; remove that selection after review.
+Installer cleanup remains restricted to its recorded, identity-marked outputs.
 
 ## Host adapters and checks
 
@@ -96,10 +147,11 @@ rejection and deterministic output, then preview the config with `--print`.
 Run the test command in the root README. Python 3.11+ also parses the
 Codex profile with `tomllib`; Python 3.9 checks the serialized instruction string.
 
-Install state tracks the prior agent name for one canonical config path. Known
-managed output paths are derived in code, including the former Codex checkpoint
-location, so state cannot supply arbitrary deletion paths. Legacy ownership
-markers are recognized for migration. Keep the config path stable across edits;
+Install state records the exact expected outputs, hosts, agent and installation
+key for one canonical config path. Code validates the whole record against the
+known host paths; records cannot supply arbitrary deletion paths. Removal needs
+both this record and a matching installation marker. Legacy records require
+manual migration and do not grant ownership. Keep the config path stable across edits;
 uninstall the old config before moving it. Separate configs should use distinct
 agent names.
 
