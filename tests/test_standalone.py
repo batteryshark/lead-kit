@@ -62,6 +62,9 @@ class StandaloneTests(unittest.TestCase):
                 self.ok()
                 self.assertEqual(len(self.snapshot()), 3)
                 text = (self.home / agent).read_text()
+                for resource in (agent, checkpoint):
+                    path = self.home / resource
+                    self.assertIn(f'=== {path}\n{path.read_text()}\n', printed)
                 self.assertIn('study-lead-checkpoint', text)
                 self.assertIn('agent `study-lead`', (self.home / checkpoint).read_text())
                 if host == 'opencode':
@@ -248,6 +251,30 @@ class StandaloneTests(unittest.TestCase):
                     render.registry()
         listed = self.ok('--list-packs')
         self.assertIn('requires: openchamber', listed)
+        self.assertFalse(self.snapshot())
+
+    def test_unknown_pack_placeholder_fails(self):
+        original = render.read
+        with patch.object(render, 'read', side_effect=lambda p: '{{MISSING}}' if p.endswith('instructions.md') else original(p)):
+            with self.assertRaisesRegex(ValueError, 'unknown pack placeholder'):
+                render.registry()
+
+    def test_toml_escaping_and_nonempty_reporting_text(self):
+        self.config.update(hosts=['codex'], owner={'mode': 'principal', 'style': 'Use "quotes", apostrophes \'\'\' and \\ paths.'})
+        printed = self.ok('--print')
+        self.assertIn('apostrophes', printed)
+        self.ok()
+        text = (self.home / '.codex/study-lead.config.toml').read_text()
+        try:
+            import tomllib
+        except ImportError:
+            prompt = json.loads(text.split('developer_instructions = ', 1)[1])
+        else:
+            prompt = tomllib.loads(text)['developer_instructions']
+        self.assertIn(self.config['owner']['style'], prompt)
+        self.ok('--uninstall')
+        for style in ('', 'line\nbreak', '`code`'):
+            self.assertNotEqual(self.run_install(config={**self.config, 'owner': {'mode': 'principal', 'style': style}}).returncode, 0)
         self.assertFalse(self.snapshot())
 
 

@@ -1,99 +1,31 @@
 # Lead kit
 
-<p><a href="assets/workstack-mark-full.png"><img src="assets/workstack-mark.png" alt="Lead kit: a beaver in a hard hat holding a project map" width="160"></a></p>
+<p><a href="assets/workstack-mark-full.png"><img src="assets/workstack-mark.png" alt="A beaver in a hard hat holding a project map" width="160"></a></p>
 
-**Give one AI lead responsibility for an outcome, not just the next prompt.**
-Lead kit supplies reusable instructions for planning, bounded workers, decisions,
-verification and handovers, plus a small installer for your agent harness.
+Lead kit installs a custom project-lead agent and a named checkpoint command or
+skill for OpenCode, Claude Code or Codex. The lead plans work, implements changes
+or delegates bounded jobs, checks results and keeps decisions in `LEAD.md`.
+Checkpointing saves enough state for the next session to resume.
 
-## Why use it?
+For a database migration, give the lead the schema change, compatibility rules
+and acceptance tests. It can inspect the code, plan the migration, implement and
+test it, then record the evidence and rollback steps. With worker tools available,
+it can assign implementation and review separately. It asks you before changing
+scope or publishing the result.
 
-A longer project needs more than a chat transcript. Someone has to keep the goal
-intact, divide up work, check results and remember why decisions were made.
-This kit gives that role a repeatable starting point:
+## Choose your lead
 
-- **Engineering:** coordinate implementation and review while keeping decisions
-  and failed approaches in one project log.
-- **Research:** split a question into bounded investigations, check the results
-  and carry unresolved questions into the next session.
-- **Life admin:** keep a multi-step outcome, approvals and follow-ups together
-  without treating a reminder as permission to act.
-
-The lead maintains `LEAD.md` and longer notes in `lead/`. Its named checkpoint
-instructions help the next session resume without relying on chat history.
-You can combine the three practice packs.
-
-## What it is—and isn't
-
-This is an **instruction kit and installer**, not an agent runtime, daemon,
-scheduler or security sandbox. You supply the host, models, tools and permissions.
-No Chief installation, private memory, routing service or paid subscription is
-bundled or required by the kit itself.
-
-This repository ships the standalone bundle included here. It is not
-automatically synchronized with the current Chief kit or with agents you have
-already installed. Review this bundle's behavior on its own; installing it does
-not update Chief or adopt changes from another project.
-
-```mermaid
-flowchart TD
-    You[You: outcome and approvals] --> Lead[Configured lead]
-    Lead --> Workers[Bounded worker tasks]
-    Workers --> Review[Lead checks results]
-    Review --> Log[LEAD.md: decisions and next steps]
-    Log --> Resume[Checkpoint and next session]
-    Lead --> Ask[Ask you about scope or reserved actions]
-```
-
-This describes the intended working pattern, not an automatically enforced engine.
-The lead's editing role is deliberately narrow: keep the log and delegate work
-when the host provides suitable worker tools.
-
-## Requirements and host fit
-
-- A POSIX environment with **Bash and Python 3.9+**; Python standard library only.
-- An installed, configured host with model access and permission to use the tools
-  your project needs. Review the rendered instructions before installing them.
-- For the full worker/reporting workflow, compatible session tools. The shared
-  instructions name `a2a_create` and OpenChamber `session.send`; a plain chat
-  harness does not acquire those capabilities by installing this kit.
-
-| Host target | What the installer writes | What you must check |
-|---|---|---|
-| OpenCode / OpenChamber | Primary agent Markdown and checkpoint command | Agent discovery, permission rules and available session tools |
-| Claude Code | Agent Markdown and checkpoint skill | Agent discovery and available Agent tools; shared OpenChamber calls are not native Claude tools |
-| Codex | TOML instruction fragment and checkpoint skill | Load the fragment through your host's supported configuration; copying it alone does not activate an agent |
-
-The adapters render files for all three targets; that is **not live compatibility
-certification for every host version**. Only OpenCode/OpenChamber integrations
-can provide the named session workflow directly. Claude Code and Codex adapters
-tell the lead to use available local worker tools and report blocked delivery.
-The common body still contains OpenChamber-specific instructions: review their
-fit rather than treating the adapters as interchangeable.
-
-No native goal engine is installed. Any supported OpenCode goal mode needs
-explicit operator binding; the Claude Code and Codex adapters provide no goal
-mode. Tool policies and prompt instructions are not isolation boundaries.
-
-## Get started
-
-Clone the repository, then start with the direct-to-you example:
-
-```sh
-git clone https://github.com/batteryshark/lead-kit.git
-cd lead-kit
-cp examples/principal.json my-lead.json
-```
-
-Edit `my-lead.json` to choose your agent name, practice packs and reporting style.
-The JSON field `owner.mode: "principal"` means “report to me in this conversation.”
-For example:
+One JSON config selects the agent name, hosts, practice packs and capabilities.
+Start with [examples/principal.json](examples/principal.json), which reports to
+you in the current conversation:
 
 ```json
 {
-  "version": 1,
-  "agent": "study-lead",
-  "packs": ["research"],
+  "version": 2,
+  "agent": "project-lead",
+  "hosts": ["opencode"],
+  "practices": ["engineering"],
+  "capabilities": [],
   "owner": {
     "mode": "principal",
     "style": "Short outcomes with evidence on request."
@@ -101,92 +33,113 @@ For example:
 }
 ```
 
-Choose a lowercase name beginning with a letter (letters, digits and hyphens,
-up to 48 characters). `lead`, `chief-of-staff`, `shape` and `checkpoint` are
-reserved. Packs are `engineering`, `research` and `life-admin`, without duplicates.
+Use `claude` or `codex` for another host, or list several hosts explicitly.
+Practices are `engineering`, `research` and `life-admin`; an empty list uses
+only the core project-leading instructions. Capabilities are opt-in:
 
-Preview one target without writing its configuration, then install that target:
+- `a2a`: peer messages and authorized local workers.
+- `openchamber`: session operations, agent-owner reporting and requested handoffs.
+- `runway`: Runway / Tarmac quota routing; requires `openchamber`.
+- `docket`: guidance for an operator-configured scheduler.
+- `fleet`: guidance for an operator-configured macOS service registry.
+
+The first three capability packs target OpenCode with their corresponding tools
+already configured. A2A and OpenChamber can be selected independently. Missing
+tools block the requested integration action while local project work continues.
+The installer validates selections without contacting hosts or installing tools.
+
+## Preview and install
+
+From this checkout, with Bash and Python 3.9+ available:
 
 ```sh
-bash install.sh --lead-config my-lead.json --print opencode
-bash install.sh --lead-config my-lead.json opencode
+cp examples/principal.json my-lead.json
+bash install.sh --list-packs
+bash install.sh --lead-config my-lead.json --print
+bash install.sh --lead-config my-lead.json --dry-run
+bash install.sh --lead-config my-lead.json
 ```
 
-Use `claude` or `codex` instead of `opencode` for another target. **Omitting the
-target selects all three.** `--dry-run` lists destinations without writing them.
-Both preview modes validate ownership and paths, so an existing unowned file can
-block even a preview.
+Edit `my-lead.json` before previewing to change the selections. `--print` shows
+the complete configured output and any stale managed files to remove. `--dry-run`
+lists destinations. Both modes leave the destination unchanged.
 
-In a project folder, write down the agreed outcome and constraints in
-`PROJECT.md`. Select the installed `study-lead` agent in a compatible host (or
-explicitly load the Codex fragment), then give it the outcome and ask it to
-maintain `LEAD.md`. For example:
+In your engineering project's folder, put the agreed outcome and constraints in
+`PROJECT.md`. Select `project-lead` in OpenCode, run
+`claude --agent project-lead` in Claude Code, or use
+`codex --profile project-lead` in Codex. Then give it a concrete task:
 
-> Compare three backup approaches for this project. Do not buy anything or
-> contact anyone. Record the options, recommendation and open decisions in
-> LEAD.md; ask me before changing scope.
+> Add the orders-table migration described in PROJECT.md. Keep the old reader
+> working, test upgrade and rollback, and maintain LEAD.md. Ask me before changing
+> the compatibility requirements or publishing anything.
 
-The example installs the checkpoint resource `study-lead-checkpoint`: an
-OpenCode command or a Claude/Codex skill. Invoke it before handing over or
-starting a fresh session. The engineering pack keeps sessions in the project
-folder unless you explicitly request a move to a worktree.
+Before handover, invoke `/project-lead-checkpoint` in OpenCode or Claude Code,
+or `$project-lead-checkpoint` in Codex. A `fresh` request saves the handover and
+asks you to start a successor unless a selected integration supports that action.
 
-### Where files go and how to undo it
+### Managed files
 
-The installer writes beneath the selected `HOME` (it does not use
-`XDG_CONFIG_HOME` to choose installation paths):
+The installer uses the selected `HOME` and writes two resources per host:
 
 - OpenCode: `.config/opencode/agents/<agent>.md` and
   `.config/opencode/commands/<agent>-checkpoint.md`.
 - Claude Code: `.claude/agents/<agent>.md` and
   `.claude/skills/<agent>-checkpoint/SKILL.md`.
-- Codex: `.codex/<agent>.config.toml` and
-  `.codex/skills/<agent>-checkpoint/SKILL.md`.
+- Codex: `.codex/<agent>.config.toml` (a named CLI profile) and
+  `.agents/skills/<agent>-checkpoint/SKILL.md`.
 
-Change the config or source and reinstall rather than editing managed output.
-To remove only this lead's managed files for the selected host:
+It records the installed name under `.local/state/lead-kit/`, keyed by config
+path. Reinstall from the same config path after changing hosts, packs or the
+agent name: previous managed outputs are removed. To undo the install:
 
 ```sh
-bash install.sh --lead-config my-lead.json --uninstall opencode
+bash install.sh --lead-config my-lead.json --uninstall
 ```
 
-Keep the same agent name and select every host you installed. The installer
-refuses unowned target files and symlinked descendants, and preflights all targets
-before writing. It intentionally retains the `chief-of-staff/install.sh` marker
-for compatibility. Empty directories may remain. Files are replaced individually,
-not as one transaction; path races and partial I/O failures are not ruled out.
+Uninstall before moving or copying a config to a different path. Edit the source
+or config and reinstall instead of editing managed files. Unowned output files
+and symlinks below `HOME` block conflicting operations; all candidate paths are
+checked before writes. Unowned stale files are retained. Empty directories may
+remain. Files are replaced individually, so an I/O failure can leave a partial
+install; concurrent path replacement is outside the guard's protection.
 
-### Optional reporting and services
+Version 1 configs receive a migration error: set `version` to `2`, rename `packs`
+to `practices`, and add explicit `hosts` and `capabilities` lists. Agent-owner mode
+also requires `integration: "openchamber"` and that capability. See
+[the pack and configuration contract](docs/packs.md) for reporting and extension details.
 
-For reporting to another agent, adapt [examples/agent.json](examples/agent.json)
-to an absolute, operator-controlled pointer file. Its live `session` and absolute
-`directory` identify the destination; re-read them before every send.
-[examples/owner.json](examples/owner.json) is a blank template, **not a working
-destination**. Never deliver to its example paths or guess a session. If delivery
-tools or a valid destination are missing, log the blockage and ask you directly;
-uncertain delivery is not permission to retry blindly.
+## Extend it
 
-[Docket guidance](kits/shared/docket.md) and [Fleet guidance](kits/shared/fleet.md)
-are optional instructions, not service installations. Use only services and
-guides you explicitly configure. No implicit service startup or external contact
-is authorized.
+`kits/lead/` contains the core, checkpoint and host adapters. `practices/` contains
+project methods; `capabilities/` contains tool-specific instructions. `packs.json`
+registers their content, host applicability and prerequisites. The existing
+Bash/Python renderer composes selected instructions in a fixed order at install
+time. Selected text stays in the agent's context; keeping rare, longer workflows
+in host skills can save context until they are needed.
 
-## Checks and limits
+To add a pack, create its instructions, register it in `packs.json`, then test
+selected and unselected output. [docs/packs.md](docs/packs.md) specifies the small
+manifest contract and host adapter files.
 
-Run the offline fixtures with:
+## Requirements and checks
+
+Bash 3.2+ and Python 3.9+ are required; the renderer uses the Python standard
+library. Offline install tests pass on macOS with Bash 3.2 and Python 3.9.
+Windows, WSL and Git Bash installation have not been exercised. The installer
+uses `HOME` directly, irrespective of `XDG_CONFIG_HOME` or `CODEX_HOME`.
 
 ```sh
 python3 -B -m unittest discover -s tests -v
 ```
 
-They render, install, reinstall and uninstall inside temporary homes, and check
-config rejection, ownership and path guards. They do not start host servers or
-prove live agent activation, delivery, goal execution or sandboxing. Host
-integration should be checked on an isolated configuration before real work.
+Tests check rendered behavior, pack validation, config changes, ownership guards
+and install lifecycles in isolated homes. Host formats follow the linked
+[official references](docs/packs.md#host-references); live host activation and
+integration delivery remain untested.
 
 ## License and artwork
 
-Source and documentation: [MIT](LICENSE). The existing comic marks are
-**AI-generated artwork**, offered on MIT terms to the extent applicable, with
-no exclusive copyright claim in AI-generated elements. See [RIGHTS.md](RIGHTS.md)
-and [ATTRIBUTION.md](ATTRIBUTION.md).
+Source and documentation: [MIT](LICENSE). The existing marks are AI-generated
+artwork, offered on MIT terms to the extent applicable, with no exclusive
+copyright claim in AI-generated elements. See [RIGHTS.md](RIGHTS.md) and
+[ATTRIBUTION.md](ATTRIBUTION.md).

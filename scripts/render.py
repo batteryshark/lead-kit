@@ -50,8 +50,11 @@ def registry():
         prefix = 'practices/' if p['kind'] == 'practice' else 'capabilities/'
         if p['content'] != f"{prefix}{p['id']}/instructions.md":
             raise ValueError('pack content must be <kind-directory>/<id>/instructions.md')
-        if not read(p['content']):
+        content = read(p['content'])
+        if not content:
             raise ValueError('empty pack content')
+        if set(re.findall(r'{{([A-Z_]+)}}', content)) - {'LEAD_AGENT', 'CHECKPOINT_NAME', 'OWNER', 'OWNER_LOG'}:
+            raise ValueError('unknown pack placeholder')
     for p in packs:
         ids(p['requires'], 'pack prerequisites', seen)
         if p['kind'] == 'practice' and any(
