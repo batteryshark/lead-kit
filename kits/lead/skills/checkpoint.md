@@ -6,6 +6,9 @@ and evidence, failed approaches, stop conditions, waiting items, worker state,
 owned processes and other effects. Mark unknowns explicitly. Keep Status under
 ten lines. Preserve principal decisions when archiving routine detail.
 
+If engineering practice is selected and repository worktrees are used, follow its
+ownership and cleanup guidance; record retained secondaries and next safe steps.
+
 Read the record as a fresh lead. Can you resume without this conversation?
 Add missing paths, constraints and the first next action. Report what was saved.
 

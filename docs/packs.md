@@ -74,6 +74,10 @@ needs a verified tool contract before it can name calls or declare dependencies.
 contract. `openchamber` uses the exposed `openchamber` action/parameters contract.
 They do not require each other. Both currently target OpenCode.
 
+The optional `openchamber` pack also covers native Project Knowledge when its
+actions are exposed, and recovery for host-confirmed, explicitly bound active
+goals. It does not activate goal mode or supply missing host actions.
+
 `runway` targets OpenCode and requires `openchamber`: its `prepare` operation
 returns OpenChamber dispatch arguments, and its ledger binds the returned session.
 Its entry instructs the lead to read the installed `routing/WORKFLOW.md` before
