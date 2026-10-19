@@ -255,9 +255,12 @@ class StandaloneTests(unittest.TestCase):
 
     def test_unknown_pack_placeholder_fails(self):
         original = render.read
-        with patch.object(render, 'read', side_effect=lambda p: '{{MISSING}}' if p.endswith('instructions.md') else original(p)):
-            with self.assertRaisesRegex(ValueError, 'unknown pack placeholder'):
-                render.registry()
+        for token in ('{{MISSING}}', '{{missing}}'):
+            with patch.object(render, 'read', side_effect=lambda p: token if p.endswith('instructions.md') else original(p)):
+                with self.assertRaisesRegex(ValueError, 'unknown pack placeholder'):
+                    render.registry()
+        with self.assertRaisesRegex(ValueError, 'malformed'):
+            render.expand('{{unfinished', {})
 
     def test_toml_escaping_and_nonempty_reporting_text(self):
         self.config.update(hosts=['codex'], owner={'mode': 'principal', 'style': 'Use "quotes", apostrophes \'\'\' and \\ paths.'})

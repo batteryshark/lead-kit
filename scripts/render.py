@@ -20,6 +20,8 @@ def read(path):
 def expand(text, values):
     for _ in range(12):
         if not re.search(r'{{[A-Z_]+}}', text):
+            if '{{' in text:
+                raise ValueError('malformed composition placeholder')
             return text
         text = re.sub(r'{{([A-Z_]+)}}', lambda m: values[m[1]], text)
     raise ValueError('cyclic composition')
@@ -53,7 +55,7 @@ def registry():
         content = read(p['content'])
         if not content:
             raise ValueError('empty pack content')
-        if set(re.findall(r'{{([A-Z_]+)}}', content)) - {'LEAD_AGENT', 'CHECKPOINT_NAME', 'OWNER', 'OWNER_LOG'}:
+        if set(re.findall(r'{{(.*?)}}', content)) - {'LEAD_AGENT', 'CHECKPOINT_NAME', 'OWNER', 'OWNER_LOG'}:
             raise ValueError('unknown pack placeholder')
     for p in packs:
         ids(p['requires'], 'pack prerequisites', seen)
