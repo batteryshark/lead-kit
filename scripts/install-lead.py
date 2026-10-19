@@ -1,74 +1,137 @@
 #!/usr/bin/env python3
-"""Install just a lead and its checkpoint. No chief profile, memory or services."""
+"""Preflight every output and stale managed file before changing anything."""
+import hashlib
+import json
 import os
 from pathlib import Path
+import re
 import sys
 import tempfile
 
-from render import expand, lead_prompt, load_lead_config, read
+from render import HOSTS, ID, expand, lead_prompt, load_lead_config, read, registry
 from install_paths import DestinationRoot
 
 
-def main(config_path, mode, hosts):
-    config, values = load_lead_config(config_path)  # Validate before any writes.
+def marker(name):
+    return f'managed by lead-kit/install.sh; lead {name}'
+
+
+def owned(path, name):
+    text = path.read_text()
+    for label in (marker(name), f'managed by chief-of-staff/install.sh; standalone lead {name}'):
+        if f'<!-- {label} -->' in text.splitlines() or f'# {label}' in text.splitlines():
+            return True
+    return False
+
+
+def paths(home, name):
+    checkpoint = name + '-checkpoint'
+    return {
+        'opencode': [home / f'.config/opencode/agents/{name}.md',
+                     home / f'.config/opencode/commands/{checkpoint}.md'],
+        'claude': [home / f'.claude/agents/{name}.md', home / f'.claude/skills/{checkpoint}/SKILL.md'],
+        'codex': [home / f'.codex/{name}.config.toml', home / f'.agents/skills/{checkpoint}/SKILL.md'],
+        'legacy': [home / f'.codex/skills/{checkpoint}/SKILL.md']}
+
+
+def render_outputs(home, config, values):
     name = config['agent']
-    destination = DestinationRoot(os.environ['HOME'])
-    home = destination.path
-    checkpoint_name = values['CHECKPOINT_NAME']
-    marker = f'managed by chief-of-staff/install.sh; standalone lead {name}'
-    prompt = lead_prompt(values)
     checkpoint = expand(read('kits/lead/skills/checkpoint.md'), values)
-    outputs = []
-    for host in dict.fromkeys(hosts):
+    outputs = {}
+    for host in HOSTS:
+        if host not in config['hosts']:
+            continue
+        prompt = lead_prompt(values, host)
+        # JSON basic strings are also TOML basic strings for these prompt characters.
+        toml_prompt = json.dumps(prompt, ensure_ascii=False)
+        template = 'codex.toml' if host == 'codex' else host + '.md'
+        label = '# ' + marker(name) if host == 'codex' else f'<!-- {marker(name)} -->'
+        agent_text = expand(read(f'kits/lead/hosts/{template}'),
+                            {**values, 'PROMPT': prompt, 'TOML_PROMPT': toml_prompt, 'MARKER': label}) + '\n'
         if host == 'opencode':
-            outputs.extend([
-                (home / f'.config/opencode/agents/{name}.md',
-                 expand(read('kits/lead/hosts/opencode.md'), {**values, 'PROMPT': prompt, 'MARKER': f'<!-- {marker} -->'}) + '\n'),
-                (home / f'.config/opencode/commands/{checkpoint_name}.md',
-                 f'---\ndescription: Checkpoint this lead\nagent: {name}\n---\n<!-- {marker} -->\n\n{checkpoint}\n\nArguments: $ARGUMENTS\n')])
-        elif host in ('claude', 'codex'):
-            suffix = 'claude.md' if host == 'claude' else 'codex.toml'
-            if host == 'codex' and "'''" in prompt:
-                raise ValueError('prompt cannot be embedded in TOML')
-            target = home / (f'.claude/agents/{name}.md' if host == 'claude' else f'.codex/{name}.config.toml')
-            outputs.append((target, expand(read(f'kits/lead/hosts/{suffix}'),
-                           {**values, 'PROMPT': prompt, 'MARKER': f'<!-- {marker} -->' if host == 'claude' else '# ' + marker}) + '\n'))
-            outputs.append((home / f'.{host}/skills/{checkpoint_name}/SKILL.md',
-                            f'---\nname: {checkpoint_name}\ndescription: Checkpoint this lead\n---\n<!-- {marker} -->\n\n{checkpoint}\n'))
-        elif host not in ('home', 'bin'):
-            raise ValueError('unsupported standalone host')
-    # No chief seeds or helper executables. Preflight all outputs before writing.
-    destination.validate_all(target for target, _ in outputs)
-    for target, _ in outputs:
-        owned_markers = (f'<!-- {marker} -->', f'# {marker}\n')
-        if target.is_symlink() or (target.exists() and not any(m in target.read_text() for m in owned_markers)):
-            raise ValueError(f'not owned by this standalone lead: {target}')
-    for target, text in outputs:
-        if mode == 'print':
-            print(f'=== {target}\n{text}')
-        elif mode == 'dry':
-            print(f'would write {target}')
-        elif mode == 'uninstall':
-            if target.exists():
-                target.unlink()
-                print(f'removed {target}')
-        elif mode == 'install':
-            target.parent.mkdir(parents=True, exist_ok=True)
-            with tempfile.NamedTemporaryFile(mode='w', dir=target.parent, delete=False) as f:
-                temp = Path(f.name)
-                f.write(text)
-            try:
-                temp.replace(target)
-            finally:
-                if temp.exists():
-                    temp.unlink()
-            print(f'installed {target}')
+            checkpoint_text = (f'---\ndescription: Checkpoint this lead before handover\nagent: {name}\nsubagent: false\n---\n'
+                               f'{label}\n\n{checkpoint}\n\nArguments: $ARGUMENTS\n')
         else:
-            raise ValueError('invalid install mode')
+            checkpoint_text = (f'---\nname: {values["CHECKPOINT_NAME"]}\n'
+                               'description: Save project state before handover or when context grows long\n---\n'
+                               f'<!-- {marker(name)} -->\n\n{checkpoint}\n')
+        agent_path, checkpoint_path = paths(home, name)[host]
+        outputs[agent_path] = agent_text
+        outputs[checkpoint_path] = checkpoint_text
+    return outputs
+
+
+def replace(target, text):
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode='w', dir=target.parent, delete=False) as f:
+        temp = Path(f.name)
+        try:
+            f.write(text)
+        except BaseException:
+            temp.unlink()
+            raise
+    try:
+        temp.replace(target)
+    finally:
+        if temp.exists():
+            temp.unlink()
+
+
+def main(config_path, mode):
+    if mode not in ('print', 'dry', 'install', 'uninstall'):
+        raise ValueError('invalid install mode')
+    config, values = load_lead_config(config_path)
+    destination = DestinationRoot(os.environ['HOME'])
+    home, name = destination.path, config['agent']
+    key = hashlib.sha256(str(Path(config_path).resolve()).encode()).hexdigest()[:24]
+    state = home / f'.local/state/lead-kit/{key}.json'
+    destination.validate_all([state])
+    previous = name
+    if state.exists():
+        data = json.loads(state.read_text())
+        if (not isinstance(data, dict) or set(data) != {'version', 'agent'}
+                or type(data['version']) is not int or data['version'] != 1
+                or not isinstance(data['agent'], str) or not re.fullmatch(ID, data['agent'])):
+            raise ValueError('invalid lead-kit install state; restore it before reinstalling')
+        previous = data['agent']
+    outputs = render_outputs(home, config, values)
+    candidates = {p: n for n in (previous, name) for group in paths(home, n).values() for p in group}
+    destination.validate_all([*candidates, state])
+    for target in outputs:
+        if target.exists() and not owned(target, name):
+            raise ValueError(f'not owned by this lead: {target}')
+    stale = []
+    for target, owner in candidates.items():
+        if target not in outputs or mode == 'uninstall':
+            if target.exists() and owned(target, owner):
+                stale.append(target)
+    if mode in ('print', 'dry'):
+        for target in stale:
+            print(f'would remove {target}')
+        for target, text in outputs.items():
+            print(f'=== {target}\n{text}' if mode == 'print' else f'would write {target}')
+        print(f'would track installation in {state}')
+        return
+    # Record the new identity last; individual replacements are atomic, the set is not.
+    for target, text in outputs.items():
+        if mode == 'install':
+            replace(target, text)
+            print(f'installed {target}')
+    for target in stale:
+        target.unlink()
+        print(f'removed {target}')
+    if mode == 'install':
+        replace(state, json.dumps({'version': 1, 'agent': name}, sort_keys=True) + '\n')
+    elif state.exists():
+        state.unlink()
 
 
 if __name__ == '__main__':
     try:
-        main(sys.argv[1], sys.argv[2], sys.argv[3:])
+        if sys.argv[1:] == ['--list-packs']:
+            for p in registry():
+                print(f"{p['kind']} {p['id']} | hosts: {', '.join(p['hosts'])} | requires: {', '.join(p['requires']) or 'none'} | {p['description']}")
+        else:
+            main(*sys.argv[1:])
     except (ValueError, KeyError, OSError, TypeError) as e:
         sys.exit(f'install.sh: {e}')

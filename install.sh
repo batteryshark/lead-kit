@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
-# Standalone Lead kit. Requires --lead-config FILE; no Chief, routing or services.
+# Hosts and packs are explicit in the config.
 set -euo pipefail
+export PYTHONDONTWRITEBYTECODE=1
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-mode=install; config=""; hosts=()
+mode=install; config=""
 while (($#)); do
   case "$1" in
     --lead-config) shift; config="${1:?--lead-config requires JSON}" ;;
     --print) mode=print ;; --dry-run) mode=dry ;; --uninstall) mode=uninstall ;;
-    opencode|claude|codex) hosts+=("$1") ;;
-    -h|--help) echo 'install.sh --lead-config FILE [--print|--dry-run|--uninstall] [opencode claude codex]'; exit 0 ;;
+    --list-packs) exec python3 "$SRC/scripts/install-lead.py" --list-packs ;;
+    opencode|claude|codex) echo 'Set hosts explicitly in config v2; positional host arguments are no longer accepted.' >&2; exit 2 ;;
+    -h|--help) echo 'install.sh --list-packs | --lead-config FILE [--print|--dry-run|--uninstall]'; exit 0 ;;
     *) echo "unsupported argument: $1" >&2; exit 2 ;;
   esac
   shift
 done
 [[ -n $config ]] || { echo '--lead-config required' >&2; exit 2; }
-((${#hosts[@]})) || hosts=(opencode claude codex)
-exec python3 "$SRC/scripts/install-lead.py" "$config" "$mode" "${hosts[@]}"
+exec python3 "$SRC/scripts/install-lead.py" "$config" "$mode"

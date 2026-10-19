@@ -1,11 +1,14 @@
 {
-  "version": 1,
+  "version": 2,
   "agent": "study-lead",
-  "packs": [
+  "hosts": ["opencode"],
+  "capabilities": ["openchamber"],
+  "practices": [
     "research"
   ],
   "owner": {
     "mode": "agent",
+    "integration": "openchamber",
     "pointer": "/example/owner.json",
     "label": "coordinator"
   }

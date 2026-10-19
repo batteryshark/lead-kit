@@ -1,0 +1,10 @@
+[
+  {"id":"engineering","kind":"practice","hosts":["opencode","claude","codex"],"requires":[],"content":"practices/engineering/instructions.md","description":"Implementation, interface changes and regression checks"},
+  {"id":"research","kind":"practice","hosts":["opencode","claude","codex"],"requires":[],"content":"practices/research/instructions.md","description":"Source evidence and bounded synthesis"},
+  {"id":"life-admin","kind":"practice","hosts":["opencode","claude","codex"],"requires":[],"content":"practices/life-admin/instructions.md","description":"Commitments and approved calendar actions"},
+  {"id":"a2a","kind":"capability","hosts":["opencode"],"requires":[],"content":"capabilities/a2a/instructions.md","description":"Configured peer communication and authorized local workers"},
+  {"id":"openchamber","kind":"capability","hosts":["opencode"],"requires":[],"content":"capabilities/openchamber/instructions.md","description":"Session dispatch, reporting and requested successor handoff"},
+  {"id":"runway","kind":"capability","hosts":["opencode"],"requires":["openchamber"],"content":"capabilities/runway/instructions.md","description":"Runway / Tarmac quota admission and worker ledger"},
+  {"id":"docket","kind":"capability","hosts":["opencode","claude","codex"],"requires":[],"content":"capabilities/docket/instructions.md","description":"Operator-configured scheduling guidance"},
+  {"id":"fleet","kind":"capability","hosts":["opencode","claude","codex"],"requires":[],"content":"capabilities/fleet/instructions.md","description":"Operator-configured macOS service registry guidance"}
+]

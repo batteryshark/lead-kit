@@ -1,4 +1,4 @@
-## Shared services: Fleet
+## Capability: Fleet
 
 Fleet is external, optional and macOS-specific. If the operator has configured
 Fleet, read that installation's README and use `fleet add` or `fleet adopt`

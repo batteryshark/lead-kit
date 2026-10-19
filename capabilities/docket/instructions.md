@@ -1,4 +1,4 @@
-## Shared services: Docket
+## Capability: Docket
 
 Docket is external and optional. Only use an operator-configured installation
 and its supplied AGENT_USAGE.md/CLI or MCP guide. If none is configured, report

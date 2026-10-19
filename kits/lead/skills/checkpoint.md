@@ -1,18 +1,17 @@
 # Lead checkpoint
 
-This lead's checkpoint resource is `{{CHECKPOINT_NAME}}`. Use that same resource
-for automatic checkpoints and before handover; do not substitute a default checkpoint.
+Checkpoint the project led by agent `{{LEAD_AGENT}}`. Read LEAD.md and reconcile
+the conversation into the log and lead/: exact goal, decisions, completed work
+and evidence, failed approaches, stop conditions, waiting items, worker state,
+owned processes and other effects. Mark unknowns explicitly. Keep Status under
+ten lines. Preserve principal decisions when archiving routine detail.
 
-Sweep the conversation into LEAD.md and lead/: goal, decisions, waiting items,
-promises, failed approaches, stop conditions, evidence, workers and side effects.
-Keep Status at most ten lines; archive old decisions and attempts, never principal
-decisions. Reconcile worker state and report unknowns honestly. Check the header's
-configured reports-to mode and live pointer, if any. Read the log as a fresh lead:
-can it resume without this conversation? Fix omissions before reporting completion.
+Read the record as a fresh lead. Can you resume without this conversation?
+Add missing paths, constraints and the first next action. Report what was saved.
 
-For `fresh`, first checkpoint, then create a new session in the same outcome folder
-using agent `{{LEAD_AGENT}}`, title `[lead] <Project>`, the exact logged goal and goal
-mode where supported. Update the log header with its id. Notify the configured
-owner through the configured mode, and tell running workers the new id. Forward
-late arrivals. The continuing lead uses `{{CHECKPOINT_NAME}}` too. Never require a
-chief or its memory for this workflow.
+For `fresh`, first finish that record. If the selected session integration
+explicitly supports creating and messaging a successor, follow its handoff
+instructions. Otherwise ask the operator to start agent `{{LEAD_AGENT}}` in the
+same project folder and read LEAD.md. Provide a short copyable handover with the
+goal, log path and next action. Do not claim that a new session exists or that
+workers were retargeted until those actions are confirmed.
