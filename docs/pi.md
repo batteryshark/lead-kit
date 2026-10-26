@@ -90,10 +90,10 @@ Within-run tool calls have no allowance cap. Focus is session-local; the default
 pool is `.pi/goals`.
 See the pinned [advanced semantics](https://github.com/tmonk/pi-goal-x/blob/v0.32.3/docs/advanced-usage.md).
 
-## Evidence boundary
+## Compatibility and validation
 
 Offline tests exercise rendering, metadata, selection and installation in isolated
 homes. Interfaces were checked against the tagged sources linked above and
 [Pi 1.0.0](https://github.com/earendil-works/pi/tree/v1.0.0/packages/coding-agent).
 Peer ranges admit Pi 1.0.0. Live extension loading, model calls, child delivery and
-goal continuation haven't been exercised. No packages were installed for these checks.
+goal continuation haven't been exercised.

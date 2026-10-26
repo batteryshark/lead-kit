@@ -19,9 +19,11 @@ command or skill saves the next action for a successor session.
 
 ## Preview and install
 
-From this checkout, with Bash 3.2+ and Python 3.9+ available:
+With Git, Bash 3.2+ and Python 3.9+ available:
 
 ```sh
+git clone https://github.com/batteryshark/lead-kit.git
+cd lead-kit
 bash install.sh --preset opencode --print
 bash install.sh --preset opencode
 ```
@@ -66,7 +68,7 @@ For delegation, separately review and set up
 autonomous goals, review and set up [pi-goal-x 0.32.3](https://pi.dev/packages/pi-goal-x).
 Select either or both through a saved config as described below. Package
 installation, Pi settings and goal activation remain under your control. See
-[Pi setup and interface evidence](docs/pi.md) for exact prerequisites and calls.
+[Pi setup and interfaces](docs/pi.md) for exact prerequisites and calls.
 
 ## Optional packs and saved configs
 
