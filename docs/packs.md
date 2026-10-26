@@ -3,8 +3,7 @@
 `--preset opencode|claude|codex|pi` selects the corresponding shipped
 `presets/<host>.json`: one host, agent `project-lead`, engineering practice,
 no capabilities and direct-principal reporting. All installer modes pass that
-same canonical path to the existing config-bound installer. No temporary config
-or new identity scheme is involved. Keep the checkout path stable while installed.
+same canonical path to the config-bound installer. Keep the checkout path stable while installed.
 Use `--lead-config FILE` for custom selections; both selectors together, repeated
 selectors and conflicting modes are errors. `--list-packs` is a standalone command.
 
@@ -118,7 +117,7 @@ identity. Stale/unknown readings and absent holds do not establish capacity.
 Observed burn is not a task-cost forecast. Tarmac supplies neither reservations
 nor worker dispatch; Runway's OpenChamber dependency belongs to that adapter.
 
-Contract evidence: Tarmac's README “Passive routing observations”,
+Contract reference: Tarmac's [setup and reference](https://github.com/batteryshark/tarmac/blob/main/docs/reference.md),
 `tarmac/api.py` (`do_GET`, `_boundary_ok`, `_status`) and
 `tarmac/payloads.py` (`observation`, `source_payload`, `window_burns`). Check the
 installed version's guide before use. Service reachability and live readings
